@@ -6,9 +6,8 @@ Printable::Printable() {
   m_animations.push_back(Animation());
   m_visable = false;
   m_layer = 0;
-  m_moved = false;
   m_anchor = Position(0, 0);
-  Sprite m_spriteBeforeMove = Sprite();
+  m_static = false;
 }
 
 void Printable::addAnimation(const Animation animation) {
@@ -34,8 +33,7 @@ Position Printable::getAnchor() { return m_anchor; }
 void Printable::displace(int dx, int dy) {
   for (Animation &animation : m_animations) {
     if (m_currentAnimation == animation.getAnimationName()) {
-      m_spriteBeforeMove = animation.getCurrentFrameSprite();
-      m_moved = true;
+      m_dirtySprites.push_back(animation.getCurrentFrameSprite());
       animation.displace(dx, dy);
       m_anchor = Position(m_anchor.getX() + dx, m_anchor.getY() + dy);
       break;
@@ -64,8 +62,21 @@ void Printable::setMoveableByCamera(bool moveableByCamera) {
   m_moveableByCamera = moveableByCamera;
 };
 
-bool Printable::didMove() { return m_moved; }
+Animation &Printable::getCurrentAnimation() {
+  for (Animation &animation : m_animations) {
+    if (m_currentAnimation == animation.getAnimationName()) {
+      return animation;
+    }
+  }
+  return m_animations.at(0);
+}
 
-void Printable::setMoved(bool moved) { m_moved = moved; }
+bool Printable::isStatic() { return m_static; }
 
-Sprite Printable::getSpriteBeforeMove() { return m_spriteBeforeMove; }
+void Printable::setStatic(bool staticAni) { m_static = staticAni; }
+
+std::vector<Sprite> &Printable::getDirtySprites() { return m_dirtySprites; }
+
+void Printable::addDirtySprite(Sprite dirtySprite) {
+  m_dirtySprites.push_back(dirtySprite);
+}

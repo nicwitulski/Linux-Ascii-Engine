@@ -7,8 +7,7 @@ GameObject::GameObject() {
   m_currentAnimation = "default";
   m_animations.push_back(Animation());
   m_anchor = Position(0, 0);
-  m_moved = false;
-  m_spriteBeforeMove = Sprite();
+  m_static = false;
 };
 
 GameObject::GameObject(bool visable, int layer, bool moveableByCamera,
@@ -20,6 +19,5 @@ GameObject::GameObject(bool visable, int layer, bool moveableByCamera,
   m_animations = animations;
   m_currentAnimation = currentAnimation;
   m_anchor = Position(0, 0);
-  m_moved = false;
-  m_spriteBeforeMove = Sprite();
+  m_static = false;
 };

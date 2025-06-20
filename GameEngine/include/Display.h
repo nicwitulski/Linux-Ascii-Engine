@@ -20,8 +20,7 @@ public:
   static void printPixel(Pixel pixel, bool isMoveableByCamera);
   static void printSprite(Sprite sprite, bool isMoveableByCamera);
   static void eraseSprite(Sprite sprite, bool isMoveableByCamera);
-  static void updateAnimation(float deltaTime, Animation &animation,
-                              bool isMoveableByCamera);
+
   static void refreshEntities(float deltaTime);
 };
 

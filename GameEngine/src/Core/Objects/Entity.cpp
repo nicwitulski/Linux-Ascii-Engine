@@ -7,9 +7,9 @@ Entity::Entity() {
   m_visable = false;
   m_layer = 0;
   m_moveableByCamera = true;
-  m_moved = false;
   m_anchor = Position(0, 0);
   Sprite m_spriteBeforeMove = Sprite();
+  m_static = false;
 };
 
 Entity::Entity(std::string entityName, std::vector<Animation> animations,
@@ -23,6 +23,7 @@ Entity::Entity(std::string entityName, std::vector<Animation> animations,
     std::cerr << "Warning: Entity \"" << entityName << "\" has no animations!"
               << std::endl;
     m_currentAnimation = "none";
+    m_static = false;
   }
 
   m_currentAnimation =
@@ -31,7 +32,6 @@ Entity::Entity(std::string entityName, std::vector<Animation> animations,
   m_visable = visable;
   m_layer = layer;
   m_moveableByCamera = moveableByCamera;
-  m_moved = false;
   m_anchor = Position(0, 0);
   Sprite m_spriteBeforeMove = Sprite();
 };

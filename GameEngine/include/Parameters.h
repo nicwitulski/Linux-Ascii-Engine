@@ -7,7 +7,9 @@
 #include <memory>
 #include <vector>
 
-extern std::vector<std::shared_ptr<Entity>> allEntities;
+extern std::vector<std::shared_ptr<Printable>> allPrintables;
+extern bool printablesNeedSorted;
+
 extern std::shared_ptr<Camera> currentCamera;
 extern std::shared_ptr<Entity> playerEntity;
 
@@ -16,5 +18,7 @@ extern int SCREEN_HEIGHT;
 extern int FRAME_RATE;
 
 extern int userInput;
+extern bool engineRunning;
+extern bool displayNeedsCleared;
 
 #endif

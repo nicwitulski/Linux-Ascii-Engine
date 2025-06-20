@@ -93,8 +93,9 @@ Animation loadAnimation(std::string entityName, std::string animationName,
   }
 }
 
-std::shared_ptr<Entity> loadEntity(const std::string entityName, bool visable,
-                                   int layer, bool moveableByCamera) {
+std::shared_ptr<Entity> loadPrintable(const std::string entityName,
+                                      bool visable, int layer,
+                                      bool moveableByCamera, bool staticAni) {
   std::vector<Animation> animations;
   std::string basePath = "src/Animations/" + entityName;
 
@@ -112,6 +113,23 @@ std::shared_ptr<Entity> loadEntity(const std::string entityName, bool visable,
   }
   auto entity = std::make_shared<Entity>(entityName, animations, visable, layer,
                                          moveableByCamera);
-  allEntities.push_back(entity);
+  entity->setStatic(staticAni);
+  allPrintables.push_back(entity);
+  printablesNeedSorted = true;
   return entity;
+}
+
+UIElement loadUIElement(const std::string animationName, bool visable,
+                        int layer, bool moveableByCamera, bool staticAni) {
+  auto UIEntity =
+      loadPrintable(animationName, visable, layer, moveableByCamera, staticAni);
+  return UIElement(UIEntity);
+}
+
+Button loadButton(const std::string animationName, bool visable, int layer,
+                  bool moveableByCamera, bool staticAni,
+                  std::function<void()> function) {
+  auto buttonEntity =
+      loadPrintable(animationName, visable, layer, moveableByCamera, staticAni);
+  return Button(buttonEntity, function);
 }

@@ -15,14 +15,14 @@ void GameEngine::run() {
 
   Display::initCurse();
   std::cout << "Made it here" << std::endl;
-  bool running = true;
-  while (running) {
+  engineRunning = true;
+  while (engineRunning) {
     // User Input
     int ch;
     while ((ch = getch()) != ERR) {
       userInput = ch;
       if (userInput == '`') {
-        running = false;
+        engineRunning = false;
       }
 
       // State Update

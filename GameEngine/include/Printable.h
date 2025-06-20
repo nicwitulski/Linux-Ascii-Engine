@@ -9,12 +9,12 @@ class Printable {
 protected:
   std::vector<Animation> m_animations;
   std::string m_currentAnimation = "default";
-  bool m_moved = false;
   Position m_anchor;
   bool m_visable;
   int m_layer;
   bool m_moveableByCamera;
-  Sprite m_spriteBeforeMove;
+  std::vector<Sprite> m_dirtySprites; // Old position that needs erasing
+  bool m_static;
 
 public:
   Printable();
@@ -23,7 +23,7 @@ public:
   std::vector<Animation> &getAnimations();
   std::string getCurrentAnimationName();
   Position getAnchor();
-  void displace(int dx, int dy);
+  virtual void displace(int dx, int dy);
   void moveToPosition(Position position);
   bool isVisable();
   int getLayer();
@@ -31,9 +31,12 @@ public:
   void setLayer(int layer);
   bool isMoveableByCamera();
   void setMoveableByCamera(bool moveable);
-  bool didMove();
-  void setMoved(bool moved);
-  Sprite getSpriteBeforeMove();
+  Sprite getScreenSpriteBeforeMove();
+  Animation &getCurrentAnimation();
+  bool isStatic();
+  void setStatic(bool staticAni);
+  void addDirtySprite(Sprite sprite);
+  std::vector<Sprite> &getDirtySprites();
 };
 
 #endif
