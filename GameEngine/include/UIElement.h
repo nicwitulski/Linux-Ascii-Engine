@@ -1,19 +1,20 @@
 #ifndef UIELEMENT_H
 #define UIELEMENT_H
 
-#include "Printable.h"
+#include "Entity.h"
+#include <memory>
 
-class UIElement : public Printable {
+class UIElement {
 protected:
   Position m_maxPosition;
   Position m_minPosition;
+  std::shared_ptr<Entity> m_entity;
 
   void setPositions();
 
 public:
   UIElement();
-  UIElement(std::vector<Animation> animations, bool visable, int layer,
-            bool movableByCamera);
+  UIElement(std::shared_ptr<Entity> entity);
 };
 
 #endif

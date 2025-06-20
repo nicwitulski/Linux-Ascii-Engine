@@ -23,14 +23,18 @@ void Display::closeCurseWindow() {
 };
 
 void Display::refreshDisplay(float deltaTime) {
-  clear();
-  std::sort(
-      allEntities.begin(), allEntities.end(),
-      [](const std::shared_ptr<Entity> &a, const std::shared_ptr<Entity> &b) {
-        return a->getLayer() < b->getLayer();
-      });
+  getmaxyx(stdscr, SCREEN_HEIGHT, SCREEN_LENGTH);
+  currentCamera->setHeight(SCREEN_HEIGHT);
+  currentCamera->setLength(SCREEN_LENGTH);
+
+  if (displayNeedsCleared) {
+    clear();
+    displayNeedsCleared = false;
+  }
+
   refreshEntities(deltaTime);
-  refresh();
+  wnoutrefresh(stdscr);
+  doupdate();
 }
 
 void Display::printPixel(Pixel pixel, bool isMoveableByCamera) {
@@ -60,31 +64,36 @@ void Display::printSprite(Sprite sprite, bool isMoveableByCamera) {
 };
 
 void Display::eraseSprite(Sprite sprite, bool isMoveableByCamera) {
-  for (std::size_t i = 0; i < sprite.getPixels().size(); i++) {
-    Pixel pixel = sprite.getPixels().at(i);
-    printPixel(
-        Pixel(Position(pixel.getPosition().getX(), pixel.getPosition().getY()),
-              ' '),
-        isMoveableByCamera);
+  for (Pixel &pixel : sprite.getPixels()) {
+    printPixel(Pixel(pixel.getPosition(), ' '), isMoveableByCamera);
   }
 }
 
-void Display::updateAnimation(float deltaTime, Animation &animation,
-                              bool isMoveableByCamera) {
-  animation.update(deltaTime);
-  eraseSprite(animation.getPreviousFrameSprite(), isMoveableByCamera);
-  printSprite(animation.getCurrentFrameSprite(), isMoveableByCamera);
-}
-
 void Display::refreshEntities(float deltaTime) {
-  for (auto &entity : allEntities) {
-    if (entity->didMove()) {
-      eraseSprite(entity->getSpriteBeforeMove(), entity->isMoveableByCamera());
-      entity->setMoved(false);
-    }
-    for (Animation &animation : entity->getAnimations()) {
-      if (animation.getAnimationName() == entity->getCurrentAnimationName()) {
-        updateAnimation(deltaTime, animation, entity->isMoveableByCamera());
+  if (printablesNeedSorted) {
+    std::sort(allPrintables.begin(), allPrintables.end(),
+              [](const std::shared_ptr<Printable> &a,
+                 const std::shared_ptr<Printable> &b) {
+                return a->getLayer() < b->getLayer();
+              });
+    printablesNeedSorted = false;
+  }
+
+  for (auto &printable : allPrintables) {
+    for (Animation &animation : printable->getAnimations()) {
+      if (animation.getAnimationName() ==
+          printable->getCurrentAnimationName()) {
+        // if (!printable->isStatic()) {
+        animation.update(deltaTime);
+        printable->addDirtySprite(animation.getPreviousFrameSprite());
+        // }
+
+        for (Sprite sprite : printable->getDirtySprites()) {
+          eraseSprite(sprite, printable->isMoveableByCamera());
+        }
+        printable->getDirtySprites().clear();
+        printSprite(animation.getCurrentFrameSprite(),
+                    printable->isMoveableByCamera());
       }
     }
   }

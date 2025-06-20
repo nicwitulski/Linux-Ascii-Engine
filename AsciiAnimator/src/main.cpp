@@ -1,4 +1,4 @@
-#include "StateLogic/StartAppState.h"
+#include "StateLogic/States.h"
 
 int main() {
   GameEngine engine(new StartAppState());
