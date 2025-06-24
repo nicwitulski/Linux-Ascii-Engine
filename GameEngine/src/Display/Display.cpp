@@ -2,7 +2,8 @@
 #include <ncurses.h>
 
 void Display::initCurse() {
-  initscr();             // Start curses mode
+  initscr(); // Start curses mode
+  curs_set(0);
   noecho();              // Don't echo keypresses
   cbreak();              // Disable line buffering
   keypad(stdscr, TRUE);  // Enable function keys and arrow keys
@@ -10,7 +11,6 @@ void Display::initCurse() {
   mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION,
             NULL);  // Enable mouse events
   mouseinterval(0); // No delay for mouse clicks
-  curs_set(0);
 
   printf("\033[?1003h\n"); // Enable mouse tracking in xterm
 };
@@ -23,9 +23,16 @@ void Display::closeCurseWindow() {
 };
 
 void Display::refreshDisplay(float deltaTime) {
-  getmaxyx(stdscr, SCREEN_HEIGHT, SCREEN_LENGTH);
-  currentCamera->setHeight(SCREEN_HEIGHT);
-  currentCamera->setLength(SCREEN_LENGTH);
+  int tempHeight, tempLength;
+  getmaxyx(stdscr, tempHeight, tempLength);
+  // Terminal size change
+  if (tempHeight != SCREEN_HEIGHT || tempLength != SCREEN_LENGTH) {
+    SCREEN_HEIGHT = tempHeight;
+    SCREEN_LENGTH = tempLength;
+    currentCamera->setHeight(SCREEN_HEIGHT);
+    currentCamera->setLength(SCREEN_LENGTH);
+    UIElement::updateAllLockedPositions();
+  }
 
   if (displayNeedsCleared) {
     clear();
@@ -35,6 +42,7 @@ void Display::refreshDisplay(float deltaTime) {
   refreshEntities(deltaTime);
   wnoutrefresh(stdscr);
   doupdate();
+  curs_set(0);
 }
 
 void Display::printPixel(Pixel pixel, bool isMoveableByCamera) {
@@ -83,10 +91,10 @@ void Display::refreshEntities(float deltaTime) {
     for (Animation &animation : printable->getAnimations()) {
       if (animation.getAnimationName() ==
           printable->getCurrentAnimationName()) {
-        // if (!printable->isStatic()) {
-        animation.update(deltaTime);
-        printable->addDirtySprite(animation.getPreviousFrameSprite());
-        // }
+        if (!printable->isStatic() && animation.isPlaying()) {
+          animation.update(deltaTime);
+          printable->addDirtySprite(animation.getPreviousFrameSprite());
+        }
 
         for (Sprite sprite : printable->getDirtySprites()) {
           eraseSprite(sprite, printable->isMoveableByCamera());

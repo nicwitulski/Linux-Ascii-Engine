@@ -27,10 +27,6 @@ void Button::executeFunction() {
 };
 
 bool Button::mouseInBounds(int x, int y) {
-  // std::cout << m_minPosition.getX() << ", " << m_minPosition.getY() <<
-  // std::endl
-  //           << m_maxPosition.getX() << ", " << m_maxPosition.getY()
-  //           << std::endl;
   if (x >= m_minPosition.getX() && x <= m_maxPosition.getX() &&
       y >= m_minPosition.getY() && y <= m_maxPosition.getY()) {
     return true;

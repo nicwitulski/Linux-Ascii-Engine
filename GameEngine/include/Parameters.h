@@ -4,6 +4,7 @@
 #pragma once
 #include "Camera.h"
 #include "Entity.h"
+#include "UIElement.h"
 #include <memory>
 #include <vector>
 
