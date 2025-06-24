@@ -1,4 +1,4 @@
-# Makefile for App using GameEngine with headers in src/
+# Makefile for App using GameEngine
 
 CXX := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -I../GameEngine/src
@@ -10,37 +10,54 @@ OBJ_DIR := build
 BIN_DIR := bin
 TARGET := $(BIN_DIR)/main
 
-# Automatically find all .cpp files and corresponding .o files
+# Sources and objects
 SRCS := $(shell find $(SRC_DIR) -name '*.cpp')
 OBJS := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 
-# === New Target: rebuild everything from both Makefiles ===
-rebuild:
-	@echo "Cleaning GameEngine..."
-	@make -C ../GameEngine clean
-	@echo "Building GameEngine..."
-	@make -C ../GameEngine
-	@echo "Cleaning current project..."
-	@$(MAKE) clean
-	@echo "Building current project..."
-	@$(MAKE) all
+# Stamp file for GameEngine builds
+GAMEENGINE_STAMP := ../GameEngine/.build_stamp
 
 # Default target
-all: $(TARGET)
+all: build_gameengine $(TARGET)
 
-# Link object files into executable
+# GameEngine build rule
+build_gameengine:
+	@echo "Building GameEngine..."
+	@$(MAKE) -C ../GameEngine
+	@touch $(GAMEENGINE_STAMP)
+	@# Check if any app object is older than engine build; if so, clean
+	@for obj in $(OBJS); do \
+	  if [ ! -f $$obj ] || [ $(GAMEENGINE_STAMP) -nt $$obj ]; then \
+	    echo "Cleaning app due to updated GameEngine..."; \
+	    $(MAKE) clean; \
+	    break; \
+	  fi \
+	done
+
+# Link target
 $(TARGET): $(OBJS)
 	@mkdir -p $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
-# Compile .cpp files into .o files
+# Compile .cpp to .o
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Clean build artifacts
+# Clean application build
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
 
-# Phony targets
-.PHONY: all clean rebuild
+# Full rebuild
+rebuild:
+	@echo "Forcing full rebuild..."
+	@$(MAKE) -C ../GameEngine clean
+	@$(MAKE) clean
+	@$(MAKE) all
+
+.PHONY: all clean rebuild build_gameengine
+
+# Build and run the application
+run: all
+	@echo "Running the application..."
+	@./$(TARGET)

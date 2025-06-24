@@ -17,9 +17,11 @@ Animation loadAnimation(std::string entityName, std::string animationName,
 std::shared_ptr<Entity> loadPrintable(const std::string entityName,
                                       bool visable, int layer,
                                       bool moveableByCamera, bool staticAni);
-UIElement loadUIElement(const std::string animationName, bool visable,
-                        int layer, bool moveableByCamera, bool staticAni);
-Button loadButton(const std::string animationName, bool visable, int layer,
-                  bool moveableByCamera, bool staticAni,
-                  std::function<void()> function);
+std::shared_ptr<UIElement> loadUIElement(const std::string animationName,
+                                         bool visable, int layer,
+                                         bool moveableByCamera, bool staticAni);
+std::shared_ptr<Button> loadButton(const std::string animationName,
+                                   bool visable, int layer,
+                                   bool moveableByCamera, bool staticAni,
+                                   std::function<void()> function);
 #endif

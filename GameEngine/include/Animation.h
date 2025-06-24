@@ -10,6 +10,8 @@ private:
   std::vector<Frame> m_frames;
   bool m_repeats;
 
+  bool m_playing;
+
   size_t currentFrameIndex = 0;
   size_t previousFrameIndex = 0;
   float frameTimer = -1.0f;
@@ -26,6 +28,9 @@ public:
   void setFrameTimer();
   void setAnimationName(std::string animationName);
   void displace(int dx, int dy);
+  void setPlaying(bool playing);
+  bool isPlaying();
+  void addPixelToCurrentFrame(Pixel pixel);
 };
 
 #endif

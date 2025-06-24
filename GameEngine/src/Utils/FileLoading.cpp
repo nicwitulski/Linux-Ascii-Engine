@@ -119,17 +119,20 @@ std::shared_ptr<Entity> loadPrintable(const std::string entityName,
   return entity;
 }
 
-UIElement loadUIElement(const std::string animationName, bool visable,
-                        int layer, bool moveableByCamera, bool staticAni) {
+std::shared_ptr<UIElement> loadUIElement(const std::string animationName,
+                                         bool visable, int layer,
+                                         bool moveableByCamera,
+                                         bool staticAni) {
   auto UIEntity =
       loadPrintable(animationName, visable, layer, moveableByCamera, staticAni);
-  return UIElement(UIEntity);
+  return std::make_unique<UIElement>(UIElement(UIEntity));
 }
 
-Button loadButton(const std::string animationName, bool visable, int layer,
-                  bool moveableByCamera, bool staticAni,
-                  std::function<void()> function) {
+std::shared_ptr<Button> loadButton(const std::string animationName,
+                                   bool visable, int layer,
+                                   bool moveableByCamera, bool staticAni,
+                                   std::function<void()> function) {
   auto buttonEntity =
       loadPrintable(animationName, visable, layer, moveableByCamera, staticAni);
-  return Button(buttonEntity, function);
+  return std::make_unique<Button>(Button(buttonEntity, function));
 }

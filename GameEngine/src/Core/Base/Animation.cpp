@@ -30,8 +30,10 @@ void Animation::update(float deltaTime) {
 };
 
 Sprite Animation::getCurrentFrameSprite() {
-  if (m_frames.empty())
-    return Sprite();
+  if (m_frames.empty()) {
+    m_frames.push_back(Frame(Sprite(), 10));
+    return m_frames[0].getSprite();
+  }
   return m_frames[currentFrameIndex].getSprite();
 };
 
@@ -51,4 +53,12 @@ void Animation::displace(int dx, int dy) {
   for (Frame &frame : m_frames) {
     frame.displace(dx, dy);
   }
+}
+
+void Animation::setPlaying(bool playing) { m_playing = playing; }
+
+bool Animation::isPlaying() { return m_playing; }
+
+void Animation::addPixelToCurrentFrame(Pixel pixel) {
+  m_frames[currentFrameIndex].getSprite().addPixel(pixel);
 }
