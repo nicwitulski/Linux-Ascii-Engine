@@ -41,3 +41,14 @@ std::string Entity::getEntityName() { return m_entityName; }
 void Entity::setEntityName(std::string entityName) {
   m_entityName = entityName;
 };
+
+bool Entity::positionInBoundsOfEntity(Position position) {
+  for (Pixel pixel :
+       getCurrentAnimation().getCurrentFrameSprite().getPixels()) {
+    if (pixel.getPosition().getX() == position.getX() &&
+        pixel.getPosition().getY() == position.getY()) {
+      return true;
+    }
+  }
+  return false;
+}

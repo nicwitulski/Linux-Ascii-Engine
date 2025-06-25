@@ -9,7 +9,7 @@ std::shared_ptr<Entity> playerEntity;
 
 int SCREEN_HEIGHT = 24;
 int SCREEN_LENGTH = 80;
-int FRAME_RATE = 60;
+
 int userInput = 0;
 bool engineRunning = false;
 bool displayNeedsCleared = false;

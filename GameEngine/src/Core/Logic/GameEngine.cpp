@@ -11,46 +11,41 @@ using Clock = std::chrono::steady_clock;
 void GameEngine::run() {
   userInput = 0;
   auto lastTime = Clock::now();
-  const float FRAME_DURATION = 1.0f / FRAME_RATE;
 
   Display::initCurse();
-  std::cout << "Made it here" << std::endl;
   engineRunning = true;
+
   while (engineRunning) {
-    // User Input
+    // --- Time Tracking ---
+    auto currentTime = Clock::now();
+    std::chrono::duration<float> delta = currentTime - lastTime;
+    float deltaTime = delta.count();
+    lastTime = currentTime;
+
+    // --- Input Handling ---
     int ch;
     while ((ch = getch()) != ERR) {
       userInput = ch;
-      if (userInput == '`') {
+      if (userInput == '`')
         engineRunning = false;
-      }
-
-      // State Update
-      currentState->update();
-
-      GameState *next = currentState->getNextState();
-      if (next != nullptr) {
-        currentState->onExit();
-        delete currentState;
-        currentState = next;
-        currentState->onEnter();
-      }
+    }
+    // State Update
+    currentState->update();
+    GameState *next = currentState->getNextState();
+    if (next) {
+      currentState->onExit();
+      delete currentState;
+      currentState = next;
+      currentState->onEnter();
     }
 
-    // --- FRAME UPDATES (LIMITED TO 60FPS) ---
-    auto currentTime = Clock::now();
-    std::chrono::duration<float> delta = currentTime - lastTime;
-    if (delta.count() >= FRAME_DURATION) {
+    // --- Refresh display using actual deltaTime ---
+    Display::refreshDisplay(deltaTime);
 
-      // Display Refresh
-      Display::refreshDisplay(delta.count());
-
-      lastTime = currentTime;
-    }
-
-    // --- Tiny sleep to prevent CPU overuse ---
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(1)); // Prevent CPU maxing out
   }
+
   exit();
 }
 

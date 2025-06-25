@@ -16,18 +16,47 @@ Animation::Animation(std::string animationName, std::vector<Frame> frames,
 std::vector<Frame> Animation::getFrames() { return m_frames; }
 
 void Animation::update(float deltaTime) {
-  if (m_frames.empty())
+  if (m_frames.empty() || !m_playing)
     return;
 
-  frameTimer += deltaTime * 60.0f;
+  frameTimer += deltaTime;
 
   previousFrameIndex = currentFrameIndex;
 
   while (frameTimer >= m_frames[currentFrameIndex].getDuration()) {
     frameTimer -= m_frames[currentFrameIndex].getDuration();
-    currentFrameIndex = (currentFrameIndex + 1) % m_frames.size();
+    currentFrameIndex++;
+
+    if (currentFrameIndex >= m_frames.size()) {
+      if (m_repeats)
+        currentFrameIndex = 0;
+      else
+        currentFrameIndex = m_frames.size() - 1; // Stop at last frame
+    }
   }
-};
+}
+
+void Animation::manuallyIncrementFrame() {
+  previousFrameIndex = currentFrameIndex;
+  currentFrameIndex++;
+  if (currentFrameIndex >= m_frames.size()) {
+    if (m_repeats)
+      currentFrameIndex = 0;
+    else
+      currentFrameIndex = m_frames.size() - 1; // Stop at last frame
+  }
+}
+
+void Animation::manuallyDecrementFrame() {
+  previousFrameIndex = currentFrameIndex;
+  currentFrameIndex--;
+  if (currentFrameIndex >= m_frames.size()) {
+    if (m_repeats)
+      currentFrameIndex = 0;
+    else
+      currentFrameIndex = m_frames.size() - 1; // Stop at last frame
+  }
+}
 
 Sprite Animation::getCurrentFrameSprite() {
   if (m_frames.empty()) {

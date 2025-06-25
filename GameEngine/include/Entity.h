@@ -16,6 +16,7 @@ public:
          bool moveableByCamera);
   std::string getEntityName();
   void setEntityName(std::string entityName);
+  bool positionInBoundsOfEntity(Position position);
 };
 
 #endif
