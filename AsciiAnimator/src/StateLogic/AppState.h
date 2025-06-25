@@ -15,6 +15,8 @@ private:
   std::shared_ptr<Entity> userEntity;
   Animation drawingAnimation;
   Frame currentFrame;
+  char drawingCharacter;
+  bool selectNewCharacter;
 
   std::shared_ptr<Button> currentCharacterButton;
   std::shared_ptr<Button> eraserSelectButton;
@@ -27,7 +29,7 @@ private:
   void currentCharacterButtonFunc();
   void eraserSelectButtonFunc();
   void frameLengthButtonFunc();
-  void newFrameButtonFunc();
+  void nextFrameButtonFunc();
   void playAnimationButtonFunc();
   void previousFrameButtonFunc();
   void quitButtonFunc();

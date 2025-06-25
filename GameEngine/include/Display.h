@@ -9,10 +9,15 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 
 class Display {
+private:
+  static std::vector<std::vector<char>> currentFrameBuffer;
+  static std::vector<std::vector<char>> lastFrameBuffer;
+
 public:
   static void initCurse();
   static char getUserInput();

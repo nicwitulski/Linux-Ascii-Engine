@@ -6,12 +6,12 @@
 class Frame {
 private:
   Sprite m_sprite;
-  int m_duration; // 60 fps default, duration = 60, frame lasts for one sec
+  float m_durationInSeconds;
 
 public:
   Frame();
-  Frame(Sprite sprite, int duration);
-  int getDuration();
+  Frame(Sprite sprite, float duration);
+  float getDuration();
   Sprite &getSprite();
   void setSprite(Sprite sprite);
   void displace(int dx, int dy);

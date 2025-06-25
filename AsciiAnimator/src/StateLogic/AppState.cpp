@@ -17,6 +17,9 @@ void AppState::onEnter() {
   allPrintables.push_back(userEntity);
   playerEntity = userEntity;
 
+  selectNewCharacter = false;
+  drawingCharacter = 'x';
+
   currentCharacterButton =
       loadButton("currentCharacterButton", true, 100, false, true,
                  [this]() { this->currentCharacterButtonFunc(); });
@@ -25,7 +28,7 @@ void AppState::onEnter() {
   frameLengthButton = loadButton("frameLengthButton", true, 100, false, true,
                                  [this]() { this->frameLengthButtonFunc(); });
   nextFrameButton = loadButton("nextFrameButton", true, 100, false, true,
-                               [this]() { this->newFrameButtonFunc(); });
+                               [this]() { this->nextFrameButtonFunc(); });
   playAnimationButton =
       loadButton("playAnimationButton", true, 100, false, true,
                  [this]() { this->playAnimationButtonFunc(); });
@@ -39,11 +42,14 @@ void AppState::onEnter() {
       ScreenLockPosition::TOP_RIGHT_CORNER);
   eraserSelectButton->setDynamicPosition(ScreenLockPosition::TOP_RIGHT_CORNER);
   frameLengthButton->setDynamicPosition(ScreenLockPosition::TOP_RIGHT_CORNER);
-  nextFrameButton->setDynamicPosition(ScreenLockPosition::BOTTOM_RIGHT_CORNER,
+
+  previousFrameButton->setDynamicPosition(ScreenLockPosition::BOTTOM_MIDDLE,
+                                          StackDirection::HORIZONTAL);
+  nextFrameButton->setDynamicPosition(ScreenLockPosition::BOTTOM_MIDDLE,
                                       StackDirection::HORIZONTAL);
-  previousFrameButton->setDynamicPosition(
-      ScreenLockPosition::BOTTOM_RIGHT_CORNER, StackDirection::HORIZONTAL);
-  playAnimationButton->setDynamicPosition(ScreenLockPosition::TOP_RIGHT_CORNER);
+  playAnimationButton->setDynamicPosition(ScreenLockPosition::BOTTOM_MIDDLE,
+                                          StackDirection::HORIZONTAL);
+
   quitButton->setDynamicPosition(ScreenLockPosition::TOP_LEFT_CORNER);
   UIElement::updateAllLockedPositions();
 };
@@ -92,6 +98,13 @@ void AppState::update() {
         drawing = false;
       }
 
+      if (event.bstate & (BUTTON1_RELEASED | BUTTON1_CLICKED)) {
+        drawing = false;
+      }
+      if (event.bstate & (BUTTON2_RELEASED | BUTTON2_CLICKED)) {
+        cameraDrag = false;
+      }
+
       if (event.bstate & REPORT_MOUSE_POSITION) {
         if (cameraDrag) {
           // Calculate how much the mouse moved
@@ -107,11 +120,13 @@ void AppState::update() {
         } else if (drawing) {
           int worldX = event.x - currentCamera->getLengthOffset();
           int worldY = event.y - currentCamera->getHeightOffset();
-          Pixel newPixel = Pixel(Position(worldX, worldY), 'x');
+          Pixel newPixel = Pixel(Position(worldX, worldY), drawingCharacter);
           userEntity->getCurrentAnimation().addPixelToCurrentFrame(newPixel);
         }
       }
     }
+  } else if (selectNewCharacter) {
+    drawingCharacter = userInput;
   }
 }
 
@@ -137,10 +152,20 @@ GameState *AppState::getNextState() {
   }
 }
 
-void AppState::currentCharacterButtonFunc() {}
-void AppState::eraserSelectButtonFunc() {}
+void AppState::currentCharacterButtonFunc() { selectNewCharacter = true; }
+void AppState::eraserSelectButtonFunc() { drawingCharacter = ' '; }
 void AppState::frameLengthButtonFunc() {}
-void AppState::newFrameButtonFunc() {}
-void AppState::playAnimationButtonFunc() {}
-void AppState::previousFrameButtonFunc() {}
+void AppState::nextFrameButtonFunc() {
+  userEntity->getCurrentAnimation().manuallyIncrementFrame();
+}
+void AppState::playAnimationButtonFunc() {
+  if (!userEntity->getCurrentAnimation().isPlaying()) {
+    userEntity->getCurrentAnimation().setPlaying(true);
+  } else {
+    userEntity->getCurrentAnimation().setPlaying(false);
+  }
+}
+void AppState::previousFrameButtonFunc() {
+  userEntity->getCurrentAnimation().manuallyDecrementFrame();
+}
 void AppState::quitButtonFunc() { nextState = States::Quit; }

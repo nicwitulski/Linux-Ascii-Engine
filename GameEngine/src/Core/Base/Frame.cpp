@@ -2,15 +2,15 @@
 
 Frame::Frame() {
   m_sprite = Sprite();
-  m_duration = 30;
+  m_durationInSeconds = 1.0f;
 };
 
-Frame::Frame(Sprite sprite, int duration) {
+Frame::Frame(Sprite sprite, float duration) {
   m_sprite = sprite;
-  m_duration = duration;
+  m_durationInSeconds = duration;
 };
 
-int Frame::getDuration() { return m_duration; };
+float Frame::getDuration() { return m_durationInSeconds; };
 
 Sprite &Frame::getSprite() { return m_sprite; };
 

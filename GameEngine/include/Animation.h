@@ -31,6 +31,8 @@ public:
   void setPlaying(bool playing);
   bool isPlaying();
   void addPixelToCurrentFrame(Pixel pixel);
+  void manuallyIncrementFrame();
+  void manuallyDecrementFrame();
 };
 
 #endif

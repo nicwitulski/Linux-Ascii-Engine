@@ -16,7 +16,6 @@ extern std::shared_ptr<Entity> playerEntity;
 
 extern int SCREEN_LENGTH;
 extern int SCREEN_HEIGHT;
-extern int FRAME_RATE;
 
 extern int userInput;
 extern bool engineRunning;

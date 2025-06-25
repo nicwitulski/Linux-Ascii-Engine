@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <memory>
+#include <string>
 
 Sprite getSpriteFromTextFile(std::string fileLocation) {
   std::ifstream inputFile(fileLocation);
@@ -37,14 +38,14 @@ Frame getFrameFromTextFile(std::string fileLocation) {
     std::cerr << "Error opening the file: " << fileLocation << std::endl;
     std::vector<Pixel> errorPixels;
     errorPixels.push_back(Pixel(Position(0, 0), '~'));
-    return Frame(Sprite(errorPixels), 60);
+    return Frame(Sprite(errorPixels), 1.0f);
   }
 
   std::string line;
   std::vector<Pixel> pixels;
 
   getline(inputFile, line);
-  int duration = stoi(line);
+  float duration = std::stof(line);
 
   std::size_t x = 0;
   int y = 0;

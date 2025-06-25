@@ -27,11 +27,7 @@ void Button::executeFunction() {
 };
 
 bool Button::mouseInBounds(int x, int y) {
-  if (x >= m_minPosition.getX() && x <= m_maxPosition.getX() &&
-      y >= m_minPosition.getY() && y <= m_maxPosition.getY()) {
-    return true;
-  }
-  return false;
+  return m_entity->positionInBoundsOfEntity(Position(x, y));
 }
 
 void Button::displace(int dx, int dy) {
