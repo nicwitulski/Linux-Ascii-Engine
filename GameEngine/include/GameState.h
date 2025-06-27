@@ -1,15 +1,32 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file GameState.h
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Game State interface used to define states in your application
+/// @version 0.1
+/// @date 2025-06-27
+///
+/// @copyright Copyright (c) 2025
+///
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef GAMESTATE_H
 #define GAMESTATE_H
 
-class GameState {
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @class PrintableFactory
+///
+/// Game State interface used to define states in your application
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class GameState
+{
 public:
-  virtual ~GameState() = default;
+   virtual ~GameState() = default;
 
-  virtual void onEnter() = 0;
-  virtual void onExit() = 0;
-  virtual void update() = 0;
+   virtual void onEnter() = 0;
+   virtual void onExit()  = 0;
+   virtual void update()  = 0;
 
-  virtual GameState *getNextState() { return nullptr; }
+   virtual GameState* getNextState() { return nullptr; }
 };
 
 #endif

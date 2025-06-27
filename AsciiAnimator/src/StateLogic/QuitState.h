@@ -1,14 +1,31 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file QuitState.h
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Quits the application and game engine
+/// @version 0.1
+/// @date 2025-06-27
+///
+/// @copyright Copyright (c) 2025
+///
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef QUITSTATE_H
 #define QUITSTATE_H
 
-#include "../AppParameters/AppParameters.h"
 #include "AppState.h"
+#include "../AppParameters/AppParameters.h"
 
-class QuitState : public GameState {
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @class QuitState
+///
+/// Quits the application and game engine
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class QuitState : public GameState
+{
 public:
-  void onEnter() override;
-  void update() override;
-  void onExit() override;
+   void onEnter() override;
+   void update() override;
+   void onExit() override;
 };
 
 #endif

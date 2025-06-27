@@ -1,0 +1,160 @@
+﻿##############################################################################################################
+### @file
+### @copyright Copyright (c) EF Johnson Technologies, Inc. All rights reserved.
+###
+### ClangFormat configuration file that most-closely matches EFJohnson's Subscriber Group's conventions
+###
+### Developed to be compatible with ClangFormat 5.  At the moment, this only applies to C/C++ code.
+###
+### Regular expression format appears to be
+### [POSIX ERE](https://www.boost.org/doc/libs/1_50_0/libs/regex/doc/html/boost_regex/syntax/basic_extended.html)
+###
+### Revision History
+### ----------------
+### * VIK#NONE Updated for version 15
+### * VIK#NONE Prefer to align arguments after opening paren; give some wiggle room beyond column limit (JBT)
+### * VIK#NONE Include Boost before std library (JBT)
+### * VIK#NONE Manually specify `BraceWrapping` as `union` brace rule did not happen with Allman preset (JBT)
+### * VIK#NONE Include "ui_*.h" files first (Qt form specific) (JBT)
+### * VIK#NONE Baseline from convention committee meeting 2018-05-11 (JBT)
+##############################################################################################################
+
+---
+# Basic
+Language : Cpp
+Standard : c++20
+ColumnLimit : '110'
+
+# Tabs
+TabWidth : '3'
+IndentWidth : '3'
+UseTab : Never
+
+# Braces/Parens (Allman style)
+BreakBeforeBraces : Custom
+BraceWrapping:
+  AfterCaseLabel:  true
+  AfterClass:      true
+  AfterControlStatement: true
+  AfterEnum:       true
+  AfterFunction:   true
+  AfterNamespace:  true
+  AfterObjCDeclaration: true
+  AfterStruct:     true
+  AfterUnion:      true
+  AfterExternBlock: true
+  BeforeCatch:     true
+  BeforeElse:      true
+  BeforeLambdaBody: true
+  IndentBraces:    false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+Cpp11BracedListStyle : true
+SpaceBeforeParens : ControlStatements
+SpacesInParentheses  : false
+SpaceInEmptyParentheses : false
+
+# Comments
+SpacesBeforeTrailingComments : '1'
+AlignTrailingComments : true
+ReflowComments : false
+CommentPragmas : '///'
+SpacesInSquareBrackets : false
+
+# Includes
+SortIncludes : true
+IncludeCategories:
+  - Regex:           'Winsock2.h'
+    Priority:        9
+  - Regex:           'Windows.h'
+    Priority:        10
+  - Regex:           '^<Q.*'
+    Priority:        6
+  - Regex:           '^"ui_.*\.h*"'
+    Priority:        5
+  - Regex:           '^<[bB]oost.*'
+    Priority:        1
+  - Regex:           '^"[^/]*"'
+    Priority:        2
+  - Regex:           '^".*/.*"'
+    Priority:        3
+  - Regex:           '^<.*\.h>'
+    Priority:        4
+  - Regex:           '^<gsl.*'
+    Priority:        7
+  - Regex:           '^<.*'
+    Priority:        8
+#IncludeIsMainRegex : 'regex here'
+#IncludeBlocks : Regroup
+
+# Declarations
+PointerAlignment : Left
+#DerivePointerAlignment : false
+AlignConsecutiveAssignments : true
+AlignConsecutiveDeclarations : true
+SortUsingDeclarations : true
+#AlignArrayOfStructures : Left - This caused issues with our m_StateTable declarations. It was helpful for structs in HWGPIO.cpp
+
+# Operators
+SpaceBeforeAssignmentOperators : true
+AlignOperands  : true
+BreakBeforeBinaryOperators : None
+BreakBeforeTernaryOperators : false
+
+# Statements
+AllowShortIfStatementsOnASingleLine : false
+AlwaysBreakBeforeMultilineStrings : false
+ContinuationIndentWidth : 6
+SpaceAfterCStyleCast : false
+SpacesInCStyleCastParentheses : false
+BreakStringLiterals : true
+SpacesInContainerLiterals : false
+
+# Control
+IndentCaseLabels : true
+AllowShortCaseLabelsOnASingleLine : false
+AllowShortLoopsOnASingleLine : false
+
+# Functions
+AlignAfterOpenBracket : Align
+AllowShortBlocksOnASingleLine : false
+AllowShortFunctionsOnASingleLine : Inline
+BinPackArguments : true
+BinPackParameters  : true
+AllowAllParametersOfDeclarationOnNextLine : true
+IndentWrappedFunctionNames : false
+AlwaysBreakAfterReturnType : None
+AlwaysBreakAfterDefinitionReturnType : None
+
+# Class
+BreakBeforeInheritanceComma : false
+BreakConstructorInitializers : BeforeColon
+ConstructorInitializerAllOnOneLineOrOnePerLine : true
+AccessModifierOffset : -3
+ConstructorInitializerIndentWidth : 3
+
+# Namespaces
+NamespaceIndentation : All
+FixNamespaceComments : true
+CompactNamespaces : false
+
+# Templates
+AlwaysBreakTemplateDeclarations : true
+SpaceAfterTemplateKeyword : false
+SpacesInAngles : false
+
+# Newlines
+AlignEscapedNewlines : Left
+KeepEmptyLinesAtTheStartOfBlocks : false
+MaxEmptyLinesToKeep : 1
+
+# Penalties
+PenaltyExcessCharacter : 10
+PenaltyBreakAssignment : 1
+PenaltyBreakFirstLessLess : 5
+PenaltyBreakBeforeFirstCallParameter : 100
+PenaltyReturnTypeOnItsOwnLine : 30
+PenaltyBreakString : 1000
+
+...

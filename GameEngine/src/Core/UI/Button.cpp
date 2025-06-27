@@ -1,67 +1,71 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file Button.h
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Defines a button with an executable function
+/// @version 0.1
+/// @date 2025-06-27
+///
+/// @copyright Copyright (c) 2025
+///
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #include "../../../include/Button.h"
 
-Button::Button() {
-  m_entity = nullptr;
-  m_minPosition = Position(0, 0);
-  m_maxPosition = Position(0, 0);
+Button::~Button() = default;
+
+// public ----------------------------------------------------------------------------------------------------
+Button::Button()
+{
+   m_lockPosition = ScreenLockPosition::NONE;
+
+   m_currentAnimationName = "default";
+   m_animations.push_back(Animation());
+   m_visable                 = false;
+   m_moveableByCamera        = true;
+   Sprite m_spriteBeforeMove = Sprite();
+   m_minPosition             = Position(0, 0);
+   m_maxPosition             = Position(0, 0);
 };
 
-Button::Button(std::shared_ptr<Entity> entity, std::function<void()> function) {
-  m_minPosition = Position(0, 0);
-  m_maxPosition = Position(0, 0);
-  m_entity = entity;
-  setFunction(function);
-  setBoundsBasedOnEntity();
-}
-
-void Button::setFunction(std::function<void()> func) {
-  m_function = std::move(func);
+// public ----------------------------------------------------------------------------------------------------
+Button::Button(const std::vector<Animation> animations, const bool visable, const bool moveableByCamera,
+               std::function<void()> function)
+{
+   m_animations              = animations;
+   m_currentAnimationName    = m_animations.at(0).getAnimationName();
+   m_visable                 = visable;
+   m_moveableByCamera        = moveableByCamera;
+   m_lockPosition            = ScreenLockPosition::NONE;
+   Sprite m_spriteBeforeMove = Sprite();
+   m_minPosition             = Position(0, 0);
+   m_maxPosition             = Position(0, 0);
+   setFunction(function);
+   setPositions();
 };
 
-void Button::executeFunction() {
-  if (m_function) {
-    m_function();
-  } else {
-    { return; }
-  }
+// public ----------------------------------------------------------------------------------------------------
+void Button::setFunction(std::function<void()> func)
+{
+   m_function = std::move(func);
 };
 
-bool Button::mouseInBounds(int x, int y) {
-  return m_entity->positionInBoundsOfEntity(Position(x, y));
-}
-
-void Button::displace(int dx, int dy) {
-  m_minPosition =
-      Position(m_minPosition.getX() + dx, m_minPosition.getY() + dy);
-  m_maxPosition =
-      Position(m_maxPosition.getX() + dx, m_maxPosition.getY() + dy);
-  m_entity->displace(dx, dy);
-}
-
-void Button::setBoundsBasedOnEntity() {
-  int minX = m_minPosition.getX();
-  int maxX = m_maxPosition.getX();
-  int minY = m_minPosition.getY();
-  int maxY = m_maxPosition.getY();
-
-  for (Frame frames : m_entity->getCurrentAnimation().getFrames()) {
-    for (Pixel pixel : frames.getSprite().getPixels()) {
-      int x = pixel.getPosition().getX();
-      int y = pixel.getPosition().getY();
-
-      if (x < minX) {
-        minX = x;
-      } else if (x > maxX) {
-        maxX = x;
+// public ----------------------------------------------------------------------------------------------------
+void Button::executeFunction()
+{
+   if (m_function)
+   {
+      m_function();
+   }
+   else
+   {
+      {
+         return;
       }
+   }
+};
 
-      if (y < minY) {
-        minY = y;
-      } else if (y > maxY) {
-        maxY = y;
-      }
-    }
-  }
-  m_minPosition = Position(minX, minY);
-  m_maxPosition = Position(maxX, maxY);
-}
+// public ----------------------------------------------------------------------------------------------------
+bool Button::mouseInBounds(Position position)
+{
+   return getCurrentAnimation().getCurrentFrameSprite().positionInBounds(position);
+};

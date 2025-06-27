@@ -1,8 +1,25 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file AppParameters.h
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Global parameters for application
+/// @version 0.1
+/// @date 2025-06-27
+///
+/// @copyright Copyright (c) 2025
+///
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef APPPARAMETERS_H
 #define APPPARAMETERS_H
 
 #pragma once
 
-enum class States { None, MainMenu, Drawing, Quit };
+enum class States
+{
+   None,
+   MainMenu,
+   Drawing,
+   Quit
+};
 
 #endif

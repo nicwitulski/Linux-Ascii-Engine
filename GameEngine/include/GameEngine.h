@@ -1,9 +1,19 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file GameEngine.h
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Highest level file, holds all needed includes. Create an instance of this object and call .run()
+/// @version 0.1
+/// @date 2025-06-27
+///
+/// @copyright Copyright (c) 2025
+///
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #include "Animation.h"
 #include "Button.h"
 #include "Camera.h"
 #include "Display.h"
 #include "Entity.h"
-#include "FileLoading.h"
 #include "Frame.h"
 #include "GameObject.h"
 #include "GameState.h"
@@ -11,20 +21,25 @@
 #include "Pixel.h"
 #include "Position.h"
 #include "Printable.h"
+#include "PrintableFactory.h"
 #include "Sprite.h"
 #include "UIElement.h"
 #include <chrono>
 
-class GameEngine {
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @class PrintableFactory
+///
+/// Highest level class, holds all needed includes. Create an instance of this object and call .run()
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class GameEngine
+{
 private:
-  GameState *currentState;
+   GameState* currentState;
 
-  void exit();
+   void exit();
 
 public:
-  GameEngine(GameState *initialState) : currentState(initialState) {
-    currentState->onEnter();
-  }
+   GameEngine(GameState* initialState) : currentState(initialState) { currentState->onEnter(); }
 
-  void run();
+   void run();
 };

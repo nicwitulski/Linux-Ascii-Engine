@@ -1,24 +1,57 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file Position.cpp
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Denotes a 2D position on a terminal
+/// @version 0.1
+/// @date 2025-06-27
+///
+/// @copyright Copyright (c) 2025
+///
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #include "../../../include/Position.h"
 
-Position::Position() {
-  m_x = 0;
-  m_y = 0;
-}
-
-Position::Position(int x, int y) {
-  m_x = x;
-  m_y = y;
+// public ----------------------------------------------------------------------------------------------------
+Position::Position()
+{
+   m_x = 0;
+   m_y = 0;
 };
 
-int Position::getX() { return m_x; };
+// public ----------------------------------------------------------------------------------------------------
+Position::Position(const int x, const int y)
+{
+   m_x = x;
+   m_y = y;
+};
 
-int Position::getY() { return m_y; };
+// public ----------------------------------------------------------------------------------------------------
+const int& Position::getX() const
+{
+   return m_x;
+};
 
-void Position::setX(int x) { m_x = x; };
+// public ----------------------------------------------------------------------------------------------------
+const int& Position::getY() const
+{
+   return m_y;
+};
 
-void Position::setY(int y) { m_y = y; };
+// public ----------------------------------------------------------------------------------------------------
+void Position::setX(const int x)
+{
+   m_x = x;
+};
 
-void Position::setPosition(int x, int y) {
-  setX(x);
-  setY(y);
+// public ----------------------------------------------------------------------------------------------------
+void Position::setY(const int y)
+{
+   m_y = y;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+void Position::setPosition(const int x, const int y)
+{
+   m_x = x;
+   m_y = y;
 };

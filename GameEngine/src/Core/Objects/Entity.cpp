@@ -1,54 +1,65 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file Entity.h
+/// @author Nicholas Witulski
+/// @brief Game object that has a name
+/// @version 0.1
+/// @date 2025-06-27
+///
+/// @copyright Copyright (c) 2025
+///
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #include "../../../include/Entity.h"
 
-Entity::Entity() {
-  m_entityName = "none";
-  m_currentAnimation = "default";
-  m_animations.push_back(Animation());
-  m_visable = false;
-  m_layer = 0;
-  m_moveableByCamera = true;
-  m_anchor = Position(0, 0);
-  Sprite m_spriteBeforeMove = Sprite();
-  m_static = false;
+// public ----------------------------------------------------------------------------------------------------
+Entity::Entity()
+{
+   m_entityName           = "none";
+   m_currentAnimationName = "default";
+   m_animations.push_back(Animation());
+   m_visable                 = false;
+   m_moveableByCamera        = true;
+   Sprite m_spriteBeforeMove = Sprite();
 };
 
-Entity::Entity(std::string entityName, std::vector<Animation> animations,
-               bool visable, int layer, bool moveableByCamera) {
-  m_entityName = entityName;
-  m_animations = animations;
+// public ----------------------------------------------------------------------------------------------------
+Entity::Entity(const std::string entityName, const std::vector<Animation> animations, const bool visable,
+               const bool moveableByCamera)
+{
+   m_entityName = entityName;
+   m_animations = animations;
 
-  if (!animations.empty()) {
-    m_currentAnimation = animations.at(0).getAnimationName();
-  } else {
-    std::cerr << "Warning: Entity \"" << entityName << "\" has no animations!"
-              << std::endl;
-    m_currentAnimation = "none";
-    m_static = false;
-  }
+   if (!animations.empty())
+   {
+      m_currentAnimationName = animations.at(0).getAnimationName();
+   }
+   else
+   {
+      std::cerr << "Warning: Entity \"" << entityName << "\" has no animations!" << std::endl;
+      m_currentAnimationName = "none";
+   }
 
-  m_currentAnimation =
-      animations.at(0).getAnimationName(); // Default is first loaded animation,
-                                           // change manually
-  m_visable = visable;
-  m_layer = layer;
-  m_moveableByCamera = moveableByCamera;
-  m_anchor = Position(0, 0);
-  Sprite m_spriteBeforeMove = Sprite();
+   m_currentAnimationName = animations.at(0).getAnimationName(); // Default is first loaded animation,
+                                                                 // change manually
+   m_visable                 = visable;
+   m_moveableByCamera        = moveableByCamera;
+   Sprite m_spriteBeforeMove = Sprite();
 };
 
-std::string Entity::getEntityName() { return m_entityName; }
-
-void Entity::setEntityName(std::string entityName) {
-  m_entityName = entityName;
+// public ----------------------------------------------------------------------------------------------------
+const std::string& Entity::getEntityName() const
+{
+   return m_entityName;
 };
 
-bool Entity::positionInBoundsOfEntity(Position position) {
-  for (Pixel pixel :
-       getCurrentAnimation().getCurrentFrameSprite().getPixels()) {
-    if (pixel.getPosition().getX() == position.getX() &&
-        pixel.getPosition().getY() == position.getY()) {
-      return true;
-    }
-  }
-  return false;
-}
+// public ----------------------------------------------------------------------------------------------------
+void Entity::setEntityName(const std::string entityName)
+{
+   m_entityName = entityName;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+bool Entity::positionInBoundsOfEntity(const Position position)
+{
+   return getCurrentAnimation().getCurrentFrameSprite().positionInBounds(position);
+};
