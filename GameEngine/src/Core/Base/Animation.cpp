@@ -1,93 +1,155 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file Animation.h
+/// @author Nicholas Witulski (nicwitulski@gmail.con)
+/// @brief Defines an Animation which holds a vector of frames and advances through them
+/// @version 0.1
+/// @date 2025-06-27
+///
+/// @copyright Copyright (c) 2025
+///
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #include "../../../include/Animation.h"
 
-Animation::Animation() {
-  m_animationName = "none";
-  m_frames.push_back(Frame());
-  m_repeats = true;
+// public ----------------------------------------------------------------------------------------------------
+Animation::Animation()
+{
+   m_animationName = "none";
+   m_frames.push_back(Frame());
+   m_repeats = true;
+   m_playing = true;
 };
 
-Animation::Animation(std::string animationName, std::vector<Frame> frames,
-                     bool repeats) {
-  m_animationName = animationName;
-  m_frames = frames;
-  m_repeats = repeats;
+// public ----------------------------------------------------------------------------------------------------
+Animation::Animation(const std::string animationName, const std::vector<Frame> frames, const bool repeats)
+{
+   m_animationName = animationName;
+   m_frames        = frames;
+   m_repeats       = repeats;
+   m_playing       = true;
 };
 
-std::vector<Frame> Animation::getFrames() { return m_frames; }
+// public ----------------------------------------------------------------------------------------------------
+const std::vector<Frame>& Animation::getFrames() const
+{
+   return m_frames;
+};
 
-void Animation::update(float deltaTime) {
-  if (m_frames.empty() || !m_playing)
-    return;
+// public ----------------------------------------------------------------------------------------------------
+void Animation::update(const float deltaTime)
+{
+   if (m_frames.empty() || !m_playing)
+      return;
 
-  frameTimer += deltaTime;
+   frameTimer += deltaTime;
 
-  previousFrameIndex = currentFrameIndex;
+   previousFrameIndex = currentFrameIndex;
 
-  while (frameTimer >= m_frames[currentFrameIndex].getDuration()) {
-    frameTimer -= m_frames[currentFrameIndex].getDuration();
-    currentFrameIndex++;
+   while (frameTimer >= m_frames[currentFrameIndex].getDuration())
+   {
+      frameTimer -= m_frames[currentFrameIndex].getDuration();
+      currentFrameIndex++;
 
-    if (currentFrameIndex >= m_frames.size()) {
+      if (currentFrameIndex >= m_frames.size())
+      {
+         if (m_repeats)
+            currentFrameIndex = 0;
+         else
+            currentFrameIndex = m_frames.size() - 1; // Stop at last frame
+      }
+   }
+};
+
+// public ----------------------------------------------------------------------------------------------------
+void Animation::manuallyIncrementFrame()
+{
+   previousFrameIndex = currentFrameIndex;
+   currentFrameIndex++;
+   if (currentFrameIndex >= m_frames.size())
+   {
       if (m_repeats)
-        currentFrameIndex = 0;
+         currentFrameIndex = 0;
       else
-        currentFrameIndex = m_frames.size() - 1; // Stop at last frame
-    }
-  }
-}
-
-void Animation::manuallyIncrementFrame() {
-  previousFrameIndex = currentFrameIndex;
-  currentFrameIndex++;
-  if (currentFrameIndex >= m_frames.size()) {
-    if (m_repeats)
-      currentFrameIndex = 0;
-    else
-      currentFrameIndex = m_frames.size() - 1; // Stop at last frame
-  }
-}
-
-void Animation::manuallyDecrementFrame() {
-  previousFrameIndex = currentFrameIndex;
-  currentFrameIndex--;
-  if (currentFrameIndex >= m_frames.size()) {
-    if (m_repeats)
-      currentFrameIndex = 0;
-    else
-      currentFrameIndex = m_frames.size() - 1; // Stop at last frame
-  }
-}
-
-Sprite Animation::getCurrentFrameSprite() {
-  if (m_frames.empty()) {
-    m_frames.push_back(Frame(Sprite(), 10));
-    return m_frames[0].getSprite();
-  }
-  return m_frames[currentFrameIndex].getSprite();
+         currentFrameIndex = m_frames.size() - 1; // Stop at last frame
+   }
 };
 
-Sprite Animation::getPreviousFrameSprite() {
-  if (m_frames.empty())
-    return Sprite();
-  return m_frames[previousFrameIndex].getSprite();
+// public ----------------------------------------------------------------------------------------------------
+void Animation::manuallyDecrementFrame()
+{
+   previousFrameIndex = currentFrameIndex;
+   currentFrameIndex--;
+   if (currentFrameIndex >= m_frames.size())
+   {
+      if (m_repeats)
+         currentFrameIndex = 0;
+      else
+         currentFrameIndex = m_frames.size() - 1; // Stop at last frame
+   }
 };
 
-std::string Animation::getAnimationName() { return m_animationName; };
-
-void Animation::setAnimationName(std::string animationName) {
-  m_animationName = animationName;
+// public ----------------------------------------------------------------------------------------------------
+const Sprite& Animation::getCurrentFrameSprite() const
+{
+   return m_frames[currentFrameIndex].getSprite();
 };
 
-void Animation::displace(int dx, int dy) {
-  for (Frame &frame : m_frames) {
-    frame.displace(dx, dy);
-  }
-}
+// public ----------------------------------------------------------------------------------------------------
+Sprite& Animation::getCurrentFrameSpriteMutable()
+{
+   return m_frames[currentFrameIndex].getMutableSprite();
+};
 
-void Animation::setPlaying(bool playing) { m_playing = playing; }
+// public ----------------------------------------------------------------------------------------------------
+const Sprite& Animation::getPreviousFrameSprite() const
+{
+   return m_frames[previousFrameIndex].getSprite();
+};
 
-bool Animation::isPlaying() { return m_playing; }
+// public ----------------------------------------------------------------------------------------------------
+const std::string& Animation::getAnimationName() const
+{
+   return m_animationName;
+};
 
-void Animation::addPixelToCurrentFrame(Pixel pixel) {
-  m_frames[currentFrameIndex].getSprite().addPixel(pixel);
-}
+// public ----------------------------------------------------------------------------------------------------
+void Animation::setAnimationName(const std::string animationName)
+{
+   m_animationName = animationName;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+void Animation::displace(const int dx, const int dy)
+{
+   for (Frame& frame : m_frames)
+   {
+      frame.displace(dx, dy);
+   }
+};
+
+// public ----------------------------------------------------------------------------------------------------
+void Animation::setPlaying(const bool playing)
+{
+   m_playing = playing;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+const bool& Animation::isPlaying() const
+{
+   return m_playing;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+void Animation::addPixelToCurrentFrame(const Pixel pixel)
+{
+   m_frames[currentFrameIndex].getMutableSprite().addPixel(pixel);
+};
+
+// public ----------------------------------------------------------------------------------------------------
+void Animation::setAllSpriteLayers(const int layer)
+{
+   for (Frame& frame : m_frames)
+   {
+      frame.getMutableSprite().setLayer(layer);
+   }
+};

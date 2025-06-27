@@ -1,30 +1,64 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file MainMenuState.h
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Main menu. Loads animation project or create new project
+/// @version 0.1
+/// @date 2025-06-27
+///
+/// @copyright Copyright (c) 2025
+///
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef MAINMENUSTATE_H
 #define MAINMENUSTATE_H
 
-#include "../AppParameters/AppParameters.h"
 #include "AppState.h"
+#include "../AppParameters/AppParameters.h"
 
-class StartAppState : public GameState {
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @class MainMenuState
+///
+/// Highest level class, holds all needed includes. Create an instance of this object and call .run()
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class MainMenuState : public GameState
+{
 private:
-  std::shared_ptr<UIElement> mainMenu;
-  std::shared_ptr<Button> newAnimation;
-  std::shared_ptr<Button> loadAnimation;
-  std::shared_ptr<Button> quit;
+   std::shared_ptr<UIElement> mainMenu;
+   std::shared_ptr<Button>    newAnimationButton;
+   std::shared_ptr<Button>    loadAnimationButton;
+   std::shared_ptr<Button>    quitButton;
 
-  MEVENT event;
+   MEVENT event;
 
-  void newAnimationFunction();
-  void loadAnimationFunction();
-  void quitFunction();
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn newAnimationFunction
+   ///
+   /// Function that gets executed when the newAnimationButton gets pressed
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void newAnimationFunction();
 
-  States nextState = States::None;
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn loadAnimationFunction
+   ///
+   /// Function that gets executed when the loadAnimationButton gets pressed
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void loadAnimationFunction();
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn quitFunction
+   ///
+   /// Function that gets executed when the quitButton gets pressed
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void quitFunction();
+
+   States nextState = States::None;
 
 public:
-  void onEnter() override;
-  void update() override;
-  void onExit() override;
+   void onEnter() override;
+   void update() override;
+   void onExit() override;
 
-  GameState *getNextState() override;
+   GameState* getNextState() override;
 };
 
 #endif

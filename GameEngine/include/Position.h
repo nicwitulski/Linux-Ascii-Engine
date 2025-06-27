@@ -1,35 +1,78 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file Position.h
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Denotes a 2D position on a terminal
+/// @version 0.1
+/// @date 2025-06-27
+///
+/// @copyright Copyright (c) 2025
+///
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef POSITION_H
 #define POSITION_H
 
-class Position {
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @class Position
+///
+/// X and Y position class
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+class Position
+{
 private:
-  int m_x;
-  int m_y;
+   int m_x;
+   int m_y;
 
 public:
-  Position();
-  Position(int x, int y);
-  Position operator+(Position &other) {
-    return Position(m_x + other.getX(), m_y + other.getY());
-  }
-  Position operator-(Position &other) {
-    return Position(m_x + other.getX(), m_y - other.getY());
-  };
-  bool operator==(Position &other) {
-    return (m_x == other.getX() && m_y == other.getY());
-  };
-  bool operator>(Position &other) {
-    return (m_y > other.getY() || (m_y == other.getY() && m_x > other.getX()));
-  };
-  bool operator<(Position &other) {
-    return (m_y < other.getY() || (m_y == other.getY() && m_x < other.getX()));
-  }
+   Position();
+   Position(const int x, const int y);
+   Position operator+(const Position& other) { return Position(m_x + other.getX(), m_y + other.getY()); }
+   Position operator-(const Position& other) { return Position(m_x + other.getX(), m_y - other.getY()); };
+   bool     operator==(const Position& other) { return (m_x == other.getX() && m_y == other.getY()); };
+   bool     operator>(const Position& other)
+   {
+      return (m_y > other.getY() || (m_y == other.getY() && m_x > other.getX()));
+   };
+   bool operator<(const Position& other)
+   {
+      return (m_y < other.getY() || (m_y == other.getY() && m_x < other.getX()));
+   }
 
-  int getX();
-  int getY();
-  void setX(int x);
-  void setY(int y);
-  void setPosition(int x, int y);
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn getX
+   ///
+   /// @return Integer X axis position
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   const int& getX() const;
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn getY
+   ///
+   /// @return Integer Y axis position
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   const int& getY() const;
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn setX
+   ///
+   /// @param x - integer x axis position
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void setX(const int x);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn setY
+   ///
+   /// @param y - integer y axis position
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void setY(const int y);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn setPosition
+   ///
+   /// @param x - integer x axis position
+   /// @param y - integer y axis position
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void setPosition(const int x, const int y);
 };
 
 #endif

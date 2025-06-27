@@ -1,0 +1,2108 @@
+// ==================== AsciiAnimator/src/AppParameters/AppParameters.cpp ====================
+
+#include "AppParameters.h"
+
+
+// ==================== AsciiAnimator/src/AppParameters/AppParameters.h ====================
+
+#ifndef APPPARAMETERS_H
+#define APPPARAMETERS_H
+
+#pragma once
+
+enum class States { None, MainMenu, Drawing, Quit };
+
+#endif
+
+// ==================== AsciiAnimator/src/StateLogic/AppState.cpp ====================
+
+#include "AppState.h"
+#include "QuitState.h"
+#include <ncurses.h>
+
+void AppState::onEnter() {
+  currentCamera = std::make_unique<Camera>(SCREEN_LENGTH, SCREEN_HEIGHT);
+
+  currentFrame = Frame(Sprite(), 10);
+  std::vector<Frame> allFrames;
+  allFrames.push_back(currentFrame);
+  drawingAnimation = Animation("newAnimation", allFrames, true);
+  drawingAnimation.setPlaying(false);
+  std::vector<Animation> allAnimations;
+  allAnimations.push_back(drawingAnimation);
+  userEntity = std::make_unique<Entity>(
+      Entity("newEntity", allAnimations, true, 0, true));
+  allPrintables.push_back(userEntity);
+  playerEntity = userEntity;
+
+  selectNewCharacter = false;
+  drawingCharacter = 'x';
+
+  currentCharacterButton =
+      loadButton("currentCharacterButton", true, 100, false, true,
+                 [this]() { this->currentCharacterButtonFunc(); });
+  eraserSelectButton = loadButton("eraserSelectButton", true, 100, false, true,
+                                  [this]() { this->eraserSelectButtonFunc(); });
+  frameLengthButton = loadButton("frameLengthButton", true, 100, false, true,
+                                 [this]() { this->frameLengthButtonFunc(); });
+  nextFrameButton = loadButton("nextFrameButton", true, 100, false, true,
+                               [this]() { this->nextFrameButtonFunc(); });
+  playAnimationButton =
+      loadButton("playAnimationButton", true, 100, false, true,
+                 [this]() { this->playAnimationButtonFunc(); });
+  previousFrameButton =
+      loadButton("previousFrameButton", true, 100, false, true,
+                 [this]() { this->previousFrameButtonFunc(); });
+  quitButton = loadButton("quitButton", true, 100, false, true,
+                          [this]() { this->quitButtonFunc(); });
+
+  currentCharacterButton->setDynamicPosition(
+      ScreenLockPosition::TOP_RIGHT_CORNER);
+  eraserSelectButton->setDynamicPosition(ScreenLockPosition::TOP_RIGHT_CORNER);
+  frameLengthButton->setDynamicPosition(ScreenLockPosition::TOP_RIGHT_CORNER);
+
+  previousFrameButton->setDynamicPosition(ScreenLockPosition::BOTTOM_MIDDLE,
+                                          StackDirection::HORIZONTAL);
+  nextFrameButton->setDynamicPosition(ScreenLockPosition::BOTTOM_MIDDLE,
+                                      StackDirection::HORIZONTAL);
+  playAnimationButton->setDynamicPosition(ScreenLockPosition::BOTTOM_MIDDLE,
+                                          StackDirection::HORIZONTAL);
+
+  quitButton->setDynamicPosition(ScreenLockPosition::TOP_LEFT_CORNER);
+  UIElement::updateAllLockedPositions();
+};
+
+void AppState::update() {
+  // Mouse Handling
+  // --------------
+  if (userInput == KEY_MOUSE) {
+    if (getmouse(&event) == OK) {
+
+      // Camera Drag
+      if (event.bstate & BUTTON2_PRESSED) {
+        cameraDrag = true;
+        lastMouseX = event.x;
+        lastMouseY = event.y;
+      }
+      if (event.bstate & BUTTON1_PRESSED) {
+        drawing = true;
+
+        int mouseX = event.x;
+        int mouseY = event.y;
+
+        if (currentCharacterButton->mouseInBounds(mouseX, mouseY)) {
+          currentCharacterButton->executeFunction();
+        } else if (eraserSelectButton->mouseInBounds(mouseX, mouseY)) {
+          eraserSelectButton->executeFunction();
+        } else if (frameLengthButton->mouseInBounds(mouseX, mouseY)) {
+          frameLengthButton->executeFunction();
+        } else if (nextFrameButton->mouseInBounds(mouseX, mouseY)) {
+          nextFrameButton->executeFunction();
+        } else if (previousFrameButton->mouseInBounds(mouseX, mouseY)) {
+          previousFrameButton->executeFunction();
+        } else if (playAnimationButton->mouseInBounds(mouseX, mouseY)) {
+          playAnimationButton->executeFunction();
+        } else if (quitButton->mouseInBounds(mouseX, mouseY)) {
+          quitButton->executeFunction();
+        }
+      }
+
+      if (event.bstate & BUTTON2_RELEASED) {
+        cameraDrag = false;
+        lastMouseX = -1;
+        lastMouseY = -1;
+      }
+      if (event.bstate & BUTTON1_RELEASED) {
+        drawing = false;
+      }
+
+      if (event.bstate & (BUTTON1_RELEASED | BUTTON1_CLICKED)) {
+        drawing = false;
+      }
+      if (event.bstate & (BUTTON2_RELEASED | BUTTON2_CLICKED)) {
+        cameraDrag = false;
+      }
+
+      if (event.bstate & REPORT_MOUSE_POSITION) {
+        if (cameraDrag) {
+          // Calculate how much the mouse moved
+          int dx = lastMouseX - event.x;
+          int dy = lastMouseY - event.y;
+
+          // Pan the camera accordingly
+          currentCamera->displaceViewPort(-dx, -dy);
+
+          // Update the last known position
+          lastMouseX = event.x;
+          lastMouseY = event.y;
+        } else if (drawing) {
+          int worldX = event.x - currentCamera->getLengthOffset();
+          int worldY = event.y - currentCamera->getHeightOffset();
+          Pixel newPixel = Pixel(Position(worldX, worldY), drawingCharacter);
+          userEntity->getCurrentAnimation().addPixelToCurrentFrame(newPixel);
+        }
+      }
+    }
+  } else if (selectNewCharacter) {
+    drawingCharacter = userInput;
+  }
+}
+
+void AppState::onExit() {}
+
+GameState *AppState::getNextState() {
+  switch (nextState) {
+  case States::None:
+    return nullptr;
+    break;
+  case States::MainMenu:
+    return nullptr;
+    break;
+  case States::Drawing:
+    return new AppState();
+    break;
+  case States::Quit:
+    return new QuitState();
+    break;
+  default:
+    return nullptr;
+    break;
+  }
+}
+
+void AppState::currentCharacterButtonFunc() { selectNewCharacter = true; }
+void AppState::eraserSelectButtonFunc() { drawingCharacter = ' '; }
+void AppState::frameLengthButtonFunc() {}
+void AppState::nextFrameButtonFunc() {
+  userEntity->getCurrentAnimation().manuallyIncrementFrame();
+}
+void AppState::playAnimationButtonFunc() {
+  if (!userEntity->getCurrentAnimation().isPlaying()) {
+    userEntity->getCurrentAnimation().setPlaying(true);
+  } else {
+    userEntity->getCurrentAnimation().setPlaying(false);
+  }
+}
+void AppState::previousFrameButtonFunc() {
+  userEntity->getCurrentAnimation().manuallyDecrementFrame();
+}
+void AppState::quitButtonFunc() { nextState = States::Quit; }
+
+// ==================== AsciiAnimator/src/StateLogic/AppState.h ====================
+
+#ifndef APPSTATE_H
+#define APPSTATE_H
+
+#include "../../../GameEngine/include/GameEngine.h"
+#include "../AppParameters/AppParameters.h"
+
+class AppState : public GameState {
+private:
+  MEVENT event;
+  bool cameraDrag = false;
+  bool drawing = true;
+  int lastMouseX = -1;
+  int lastMouseY = -1;
+
+  std::shared_ptr<Entity> userEntity;
+  Animation drawingAnimation;
+  Frame currentFrame;
+  char drawingCharacter;
+  bool selectNewCharacter;
+
+  std::shared_ptr<Button> currentCharacterButton;
+  std::shared_ptr<Button> eraserSelectButton;
+  std::shared_ptr<Button> frameLengthButton;
+  std::shared_ptr<Button> nextFrameButton;
+  std::shared_ptr<Button> playAnimationButton;
+  std::shared_ptr<Button> previousFrameButton;
+  std::shared_ptr<Button> quitButton;
+
+  void currentCharacterButtonFunc();
+  void eraserSelectButtonFunc();
+  void frameLengthButtonFunc();
+  void nextFrameButtonFunc();
+  void playAnimationButtonFunc();
+  void previousFrameButtonFunc();
+  void quitButtonFunc();
+
+  States nextState = States::None;
+
+public:
+  void onEnter() override;
+  void update() override;
+  void onExit() override;
+
+  GameState *getNextState() override;
+};
+
+#endif
+
+// ==================== AsciiAnimator/src/StateLogic/MainMenuState.cpp ====================
+
+#include "MainMenuState.h"
+#include "QuitState.h"
+#include <memory>
+#include <ncurses.h>
+
+void StartAppState::onEnter() {
+  mainMenu = loadUIElement("mainMenuSprite", true, 0, false, true);
+  newAnimation = loadButton("newAnimationButton", true, 1, false, true,
+                            [this]() { this->newAnimationFunction(); });
+  loadAnimation = loadButton("loadAnimationButton", true, 1, false, true,
+                             [this]() { this->loadAnimationFunction(); });
+  quit = loadButton("quitButton", true, 1, false, true,
+                    [this]() { this->quitFunction(); });
+
+  SCREEN_LENGTH = 120;
+  currentCamera = std::make_unique<Camera>(SCREEN_LENGTH, SCREEN_HEIGHT);
+  playerEntity = nullptr;
+
+  newAnimation->displace(58, 11);
+  loadAnimation->displace(58, 13);
+  quit->displace(58, 15);
+};
+
+void StartAppState::update() {
+  if (userInput == KEY_MOUSE) {
+    if (getmouse(&event) == OK) {
+      if (event.bstate & BUTTON1_PRESSED) {
+        int mouseX = event.x;
+        int mouseY = event.y;
+
+        if (newAnimation->mouseInBounds(mouseX, mouseY)) {
+          newAnimation->executeFunction();
+        } else if (loadAnimation->mouseInBounds(mouseX, mouseY)) {
+          loadAnimation->executeFunction();
+        } else if (quit->mouseInBounds(mouseX, mouseY)) {
+          quit->executeFunction();
+        }
+      }
+    }
+  }
+}
+
+void StartAppState::onExit() {
+  clear();
+  allPrintables.clear();
+}
+
+GameState *StartAppState::getNextState() {
+  switch (nextState) {
+  case States::None:
+    return nullptr;
+    break;
+  case States::MainMenu:
+    return nullptr;
+    break;
+  case States::Drawing:
+    return new AppState();
+    break;
+  case States::Quit:
+    return new QuitState();
+    break;
+  default:
+    return nullptr;
+    break;
+  }
+}
+
+void StartAppState::newAnimationFunction() { nextState = States::Drawing; }
+void StartAppState::loadAnimationFunction() { nextState = States::Drawing; }
+void StartAppState::quitFunction() { nextState = States::Quit; }
+
+// ==================== AsciiAnimator/src/StateLogic/MainMenuState.h ====================
+
+#ifndef MAINMENUSTATE_H
+#define MAINMENUSTATE_H
+
+#include "../AppParameters/AppParameters.h"
+#include "AppState.h"
+
+class StartAppState : public GameState {
+private:
+  std::shared_ptr<UIElement> mainMenu;
+  std::shared_ptr<Button> newAnimation;
+  std::shared_ptr<Button> loadAnimation;
+  std::shared_ptr<Button> quit;
+
+  MEVENT event;
+
+  void newAnimationFunction();
+  void loadAnimationFunction();
+  void quitFunction();
+
+  States nextState = States::None;
+
+public:
+  void onEnter() override;
+  void update() override;
+  void onExit() override;
+
+  GameState *getNextState() override;
+};
+
+#endif
+
+// ==================== AsciiAnimator/src/StateLogic/QuitState.cpp ====================
+
+#include "QuitState.h"
+
+void QuitState::onEnter() { engineRunning = false; }
+
+void QuitState::update() {}
+
+void QuitState::onExit() {}
+
+// ==================== AsciiAnimator/src/StateLogic/QuitState.h ====================
+
+#ifndef QUITSTATE_H
+#define QUITSTATE_H
+
+#include "../AppParameters/AppParameters.h"
+#include "AppState.h"
+
+class QuitState : public GameState {
+public:
+  void onEnter() override;
+  void update() override;
+  void onExit() override;
+};
+
+#endif
+
+// ==================== AsciiAnimator/src/main.cpp ====================
+
+#include "StateLogic/MainMenuState.h"
+
+int main() {
+  GameEngine engine(new StartAppState());
+  engine.run();
+  return 0;
+}
+
+// ==================== GameEngine/include/Animation.h ====================
+
+#ifndef ANIMATION_H
+#define ANIMATION_H
+
+#include "Frame.h"
+#include <string>
+
+class Animation {
+private:
+  std::string m_animationName;
+  std::vector<Frame> m_frames;
+  bool m_repeats;
+
+  bool m_playing;
+
+  size_t currentFrameIndex = 0;
+  size_t previousFrameIndex = 0;
+  float frameTimer = -1.0f;
+
+public:
+  Animation();
+  Animation(std::string animationName, std::vector<Frame> frames, bool repeats);
+  void update(float deltaTime);
+  Sprite getCurrentFrameSprite();
+  Sprite getPreviousFrameSprite();
+  std::string getAnimationName();
+  std::vector<Frame> getFrames();
+  float getFrameTimer();
+  void setFrameTimer();
+  void setAnimationName(std::string animationName);
+  void displace(int dx, int dy);
+  void setPlaying(bool playing);
+  bool isPlaying();
+  void addPixelToCurrentFrame(Pixel pixel);
+  void manuallyIncrementFrame();
+  void manuallyDecrementFrame();
+};
+
+#endif
+
+// ==================== GameEngine/include/Button.h ====================
+
+#ifndef BUTTON_H
+#define BUTTON_H
+
+#include "UIElement.h"
+#include <functional>
+
+class Button : public UIElement {
+private:
+  std::function<void()> m_function;
+  void setBoundsBasedOnEntity();
+
+public:
+  Button();
+  Button(std::shared_ptr<Entity> entity, std::function<void()> function);
+  void setFunction(std::function<void()> func);
+  void executeFunction();
+  bool mouseInBounds(int x, int y);
+  void displace(int dx, int dy);
+};
+
+#endif
+
+// ==================== GameEngine/include/Camera.h ====================
+
+#ifndef CAMERA_H
+#define CAMERA_H
+
+#include "Position.h"
+#include <cstdint>
+
+class Camera {
+private:
+  int m_length;
+  int m_height;
+  int m_lengthOffset;
+  int m_heightOffset;
+  int m_lastLengthOffset;
+  int m_lastHeightOffset;
+
+public:
+  Camera();
+  Camera(int length, int height);
+  void displaceViewPort(int dx, int dy);
+  int getLength();
+  void setLength(int length);
+  int getHeight();
+  void setHeight(int height);
+  int getLengthOffset();
+  int getHeightOffset();
+};
+
+#endif
+
+// ==================== GameEngine/include/Display.h ====================
+
+#ifndef DISPLAY_H
+#define DISPLAY_H
+
+#include "Animation.h"
+#include "Parameters.h"
+#include "ncurses.h"
+#include <algorithm>
+#include <chrono>
+#include <cstdlib>
+#include <cstring>
+#include <memory>
+#include <mutex>
+#include <unordered_map>
+#include <vector>
+
+class Display {
+private:
+  static std::vector<std::vector<char>> currentFrameBuffer;
+  static std::vector<std::vector<char>> lastFrameBuffer;
+
+public:
+  static void initCurse();
+  static char getUserInput();
+  static void closeCurseWindow();
+  static void refreshDisplay(float deltaTime);
+  static void printPixel(const Pixel pixel, bool isMoveableByCamera);
+  static void printSprite(Sprite sprite, bool isMoveableByCamera);
+  static void eraseSprite(Sprite sprite, bool isMoveableByCamera);
+
+  static void refreshEntities(float deltaTime);
+};
+
+#endif
+
+// ==================== GameEngine/include/Entity.h ====================
+
+#ifndef ENTITY_H
+#define ENTITY_H
+
+#include "GameObject.h"
+#include <iostream>
+
+class Entity : public GameObject {
+private:
+  std::string m_entityName;
+
+public:
+  Entity();
+  Entity(std::string entityName, std::vector<Animation> animations,
+         bool visable, int layer, bool moveableByCamera);
+  Entity(std::string entityName, bool visable, int layer,
+         bool moveableByCamera);
+  std::string getEntityName();
+  void setEntityName(std::string entityName);
+  bool positionInBoundsOfEntity(Position position);
+};
+
+#endif
+
+// ==================== GameEngine/include/FileLoading.h ====================
+
+#ifndef FILELOADING_H
+#define FILELOADING_H
+
+#include "Button.h"
+#include "Entity.h"
+#include "Parameters.h"
+#include "Printable.h"
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <string>
+
+Sprite getSpriteFromTextFile(std::string fileLocation);
+Frame getFrameFromTextFile(std::string fileLocation);
+Animation loadAnimation(std::string entityName, std::string animationName,
+                        bool repeats);
+std::shared_ptr<Entity> loadPrintable(const std::string entityName,
+                                      bool visable, int layer,
+                                      bool moveableByCamera, bool staticAni);
+std::shared_ptr<UIElement> loadUIElement(const std::string animationName,
+                                         bool visable, int layer,
+                                         bool moveableByCamera, bool staticAni);
+std::shared_ptr<Button> loadButton(const std::string animationName,
+                                   bool visable, int layer,
+                                   bool moveableByCamera, bool staticAni,
+                                   std::function<void()> function);
+#endif
+
+// ==================== GameEngine/include/Frame.h ====================
+
+#ifndef FRAME_H
+#define FRAME_H
+
+#include "Sprite.h"
+
+class Frame {
+private:
+  Sprite m_sprite;
+  float m_durationInSeconds;
+
+public:
+  Frame(const Frame &) = default;
+  Frame &operator=(const Frame &) = default;
+  Frame();
+  Frame(Sprite sprite, float duration);
+  float getDuration();
+  Sprite &getSprite();
+  void setSprite(Sprite sprite);
+  void displace(int dx, int dy);
+};
+
+#endif
+
+// ==================== GameEngine/include/GameEngine.h ====================
+
+#include "Animation.h"
+#include "Button.h"
+#include "Camera.h"
+#include "Display.h"
+#include "Entity.h"
+#include "FileLoading.h"
+#include "Frame.h"
+#include "GameObject.h"
+#include "GameState.h"
+#include "Parameters.h"
+#include "Pixel.h"
+#include "Position.h"
+#include "Printable.h"
+#include "Sprite.h"
+#include "UIElement.h"
+#include <chrono>
+
+class GameEngine {
+private:
+  GameState *currentState;
+
+  void exit();
+
+public:
+  GameEngine(GameState *initialState) : currentState(initialState) {
+    currentState->onEnter();
+  }
+
+  void run();
+};
+
+// ==================== GameEngine/include/GameObject.h ====================
+
+#ifndef GAMEOBJECT_H
+#define GAMEOBJECT_H
+
+#include "Printable.h"
+
+class GameObject : public Printable {
+protected:
+public:
+  GameObject();
+  GameObject(bool visable, int layer, bool moveableByCamera,
+             std::vector<Animation> animations, std::string currentAnimation);
+};
+
+#endif
+
+// ==================== GameEngine/include/GameState.h ====================
+
+#ifndef GAMESTATE_H
+#define GAMESTATE_H
+
+class GameState {
+public:
+  virtual ~GameState() = default;
+
+  virtual void onEnter() = 0;
+  virtual void onExit() = 0;
+  virtual void update() = 0;
+
+  virtual GameState *getNextState() { return nullptr; }
+};
+
+#endif
+
+// ==================== GameEngine/include/Parameters.h ====================
+
+#ifndef PARAMETERS_H
+#define PARAMETERS_H
+
+#pragma once
+#include "Camera.h"
+#include "Entity.h"
+#include "UIElement.h"
+#include <memory>
+#include <vector>
+
+extern std::vector<std::shared_ptr<Printable>> allPrintables;
+extern bool printablesNeedSorted;
+
+extern std::shared_ptr<Camera> currentCamera;
+extern std::shared_ptr<Entity> playerEntity;
+
+extern int SCREEN_LENGTH;
+extern int SCREEN_HEIGHT;
+
+extern int userInput;
+extern bool engineRunning;
+extern bool displayNeedsCleared;
+
+#endif
+
+
+// ==================== GameEngine/include/Pixel.h ====================
+
+#ifndef PIXEL_H
+#define PIXEL_H
+
+#include "Position.h"
+#include "RGB.h"
+
+class Pixel {
+private:
+  Position m_position;
+  char m_character;
+  // RGB m_textColor;
+  // RGB m_backgroundColor;
+
+public:
+  Pixel(const Pixel &) = default;
+  Pixel &operator=(const Pixel &) = default;
+  Pixel();
+  Pixel(Position position, char character);
+  // Pixel(Position position, char character, RGB textColor, RGB
+  // backgroundColor);
+  void setPosition(Position position);
+  Position getPosition() const;
+  void setCharacter(char character);
+  char getCharacter() const;
+  void displace(int dx, int dy);
+  // void setTextColor(RGB textColor);
+  // void setBackgroundColor(RGB backgroundColor);
+  // RGB getTextColor();
+  // RGB getBackgroundColor();
+};
+
+#endif
+
+
+// ==================== GameEngine/include/Position.h ====================
+
+#ifndef POSITION_H
+#define POSITION_H
+
+class Position {
+private:
+  int m_x;
+  int m_y;
+
+public:
+  Position();
+  Position(int x, int y);
+  Position operator+(Position &other) {
+    return Position(m_x + other.getX(), m_y + other.getY());
+  }
+  Position operator-(Position &other) {
+    return Position(m_x + other.getX(), m_y - other.getY());
+  };
+  bool operator==(Position &other) {
+    return (m_x == other.getX() && m_y == other.getY());
+  };
+  bool operator>(Position &other) {
+    return (m_y > other.getY() || (m_y == other.getY() && m_x > other.getX()));
+  };
+  bool operator<(Position &other) {
+    return (m_y < other.getY() || (m_y == other.getY() && m_x < other.getX()));
+  }
+
+  int getX();
+  int getY();
+  void setX(int x);
+  void setY(int y);
+  void setPosition(int x, int y);
+};
+
+#endif
+
+// ==================== GameEngine/include/Printable.h ====================
+
+#ifndef PRINTABLE_H
+#define PRINTABLE_H
+
+#include "Animation.h"
+#include <string>
+#include <vector>
+
+class Printable {
+protected:
+  std::vector<Animation> m_animations;
+  std::string m_currentAnimation = "default";
+  Position m_anchor;
+  bool m_visable;
+  int m_layer;
+  bool m_moveableByCamera;
+  std::vector<Sprite> m_dirtySprites; // Old position that needs erasing
+  bool m_static;
+
+public:
+  Printable();
+  void addAnimation(const Animation animation);
+  bool setCurrentAnimation(const std::string name);
+  std::vector<Animation> &getAnimations();
+  std::string getCurrentAnimationName();
+  Position getAnchor();
+  virtual void displace(int dx, int dy);
+  void moveToPosition(Position position);
+  bool isVisable();
+  int getLayer();
+  void setVisability(bool visable);
+  void setLayer(int layer);
+  bool isMoveableByCamera();
+  void setMoveableByCamera(bool moveable);
+  Sprite getScreenSpriteBeforeMove();
+  Animation &getCurrentAnimation();
+  bool isStatic();
+  void setStatic(bool staticAni);
+  void addDirtySprite(Sprite sprite);
+  std::vector<Sprite> &getDirtySprites();
+};
+
+#endif
+
+// ==================== GameEngine/include/RGB.h ====================
+
+#ifndef RGB_H
+#define RGB_H
+
+// ncurses uses 0 - 1000 for rgb range
+class RGB {
+private:
+  int m_r;
+  int m_g;
+  int m_b;
+
+public:
+  RGB(const RGB &) = default;
+  RGB &operator=(const RGB &) = default;
+  RGB(RGB &&) = default;
+  RGB &operator=(RGB &&) = default;
+  RGB();
+  RGB(int r, int g, int b);
+  int getR();
+  int getG();
+  int getB();
+  void setR(int r);
+  void setG(int g);
+  void setB(int b);
+};
+
+#endif
+
+// ==================== GameEngine/include/Sprite.h ====================
+
+#ifndef SPRITE_H
+#define SPRITE_H
+
+#include "Pixel.h"
+#include <vector>
+
+class Sprite {
+private:
+  std::vector<Pixel> m_pixels;
+
+public:
+  Sprite(const Sprite &) = default;
+  Sprite &operator=(const Sprite &) = default;
+  Sprite();
+  Sprite(std::vector<Pixel> pixels);
+  void addPixel(Pixel pixel);
+  const std::vector<Pixel> &getPixels() const;
+  void displace(int dx, int dy);
+};
+
+#endif
+
+
+// ==================== GameEngine/include/UIElement.h ====================
+
+#ifndef UIELEMENT_H
+#define UIELEMENT_H
+
+#include "Entity.h"
+#include <map>
+#include <memory>
+#include <vector>
+
+enum class ScreenLockPosition {
+  NONE,
+  TOP_LEFT_CORNER,
+  TOP_MIDDLE,
+  TOP_RIGHT_CORNER,
+  RIGHT_MIDDLE,
+  BOTTOM_RIGHT_CORNER,
+  BOTTOM_MIDDLE,
+  BOTTOM_LEFT_CORNER,
+  LEFT_MIDDLE,
+  CENTER
+};
+
+enum class StackDirection { VERTICAL, HORIZONTAL };
+
+class UIElement : public std::enable_shared_from_this<UIElement> {
+protected:
+  Position m_maxPosition;
+  Position m_minPosition;
+  std::shared_ptr<Entity> m_entity;
+  ScreenLockPosition m_lockPosition;
+  StackDirection m_stackDirection;
+
+  void setPositions();
+  void updateElement();
+
+public:
+  UIElement();
+  UIElement(std::shared_ptr<Entity> entity);
+
+  static std::vector<std::shared_ptr<UIElement>> topMiddleUIElements;
+  static std::vector<std::shared_ptr<UIElement>> rightMiddleUIElements;
+  static std::vector<std::shared_ptr<UIElement>> bottomMiddleUIElements;
+  static std::vector<std::shared_ptr<UIElement>> leftMiddleUIElements;
+  static std::vector<std::shared_ptr<UIElement>> topLeftUIElements;
+  static std::vector<std::shared_ptr<UIElement>> topRightUIElements;
+  static std::vector<std::shared_ptr<UIElement>> bottomRightUIElements;
+  static std::vector<std::shared_ptr<UIElement>> bottomLeftUIElements;
+  static std::vector<std::shared_ptr<UIElement>> middleUIElements;
+
+  void setDynamicPosition(ScreenLockPosition position,
+                          StackDirection direction = StackDirection::VERTICAL);
+  static void updateAllLockedPositions();
+
+  std::shared_ptr<UIElement> getptr() { return shared_from_this(); }
+};
+
+#endif
+
+
+// ==================== GameEngine/src/Core/Base/Animation.cpp ====================
+
+#include "../../../include/Animation.h"
+
+Animation::Animation() {
+  m_animationName = "none";
+  m_frames.push_back(Frame());
+  m_repeats = true;
+};
+
+Animation::Animation(std::string animationName, std::vector<Frame> frames,
+                     bool repeats) {
+  m_animationName = animationName;
+  m_frames = frames;
+  m_repeats = repeats;
+};
+
+std::vector<Frame> Animation::getFrames() { return m_frames; }
+
+void Animation::update(float deltaTime) {
+  if (m_frames.empty() || !m_playing)
+    return;
+
+  frameTimer += deltaTime;
+
+  previousFrameIndex = currentFrameIndex;
+
+  while (frameTimer >= m_frames[currentFrameIndex].getDuration()) {
+    frameTimer -= m_frames[currentFrameIndex].getDuration();
+    currentFrameIndex++;
+
+    if (currentFrameIndex >= m_frames.size()) {
+      if (m_repeats)
+        currentFrameIndex = 0;
+      else
+        currentFrameIndex = m_frames.size() - 1; // Stop at last frame
+    }
+  }
+}
+
+void Animation::manuallyIncrementFrame() {
+  previousFrameIndex = currentFrameIndex;
+  currentFrameIndex++;
+  if (currentFrameIndex >= m_frames.size()) {
+    if (m_repeats)
+      currentFrameIndex = 0;
+    else
+      currentFrameIndex = m_frames.size() - 1; // Stop at last frame
+  }
+}
+
+void Animation::manuallyDecrementFrame() {
+  previousFrameIndex = currentFrameIndex;
+  currentFrameIndex--;
+  if (currentFrameIndex >= m_frames.size()) {
+    if (m_repeats)
+      currentFrameIndex = 0;
+    else
+      currentFrameIndex = m_frames.size() - 1; // Stop at last frame
+  }
+}
+
+Sprite Animation::getCurrentFrameSprite() {
+  if (m_frames.empty()) {
+    m_frames.push_back(Frame(Sprite(), 10));
+    return m_frames[0].getSprite();
+  }
+  return m_frames[currentFrameIndex].getSprite();
+};
+
+Sprite Animation::getPreviousFrameSprite() {
+  if (m_frames.empty())
+    return Sprite();
+  return m_frames[previousFrameIndex].getSprite();
+};
+
+std::string Animation::getAnimationName() { return m_animationName; };
+
+void Animation::setAnimationName(std::string animationName) {
+  m_animationName = animationName;
+};
+
+void Animation::displace(int dx, int dy) {
+  for (Frame &frame : m_frames) {
+    frame.displace(dx, dy);
+  }
+}
+
+void Animation::setPlaying(bool playing) { m_playing = playing; }
+
+bool Animation::isPlaying() { return m_playing; }
+
+void Animation::addPixelToCurrentFrame(Pixel pixel) {
+  m_frames[currentFrameIndex].getSprite().addPixel(pixel);
+}
+
+// ==================== GameEngine/src/Core/Base/Frame.cpp ====================
+
+#include "../../../include/Frame.h"
+
+Frame::Frame() {
+  m_sprite = Sprite();
+  m_durationInSeconds = 1.0f;
+};
+
+Frame::Frame(Sprite sprite, float duration) {
+  m_sprite = sprite;
+  m_durationInSeconds = duration;
+};
+
+float Frame::getDuration() { return m_durationInSeconds; };
+
+Sprite &Frame::getSprite() { return m_sprite; };
+
+void Frame::setSprite(Sprite sprite) { m_sprite = sprite; };
+
+void Frame::displace(int dx, int dy) { m_sprite.displace(dx, dy); }
+
+// ==================== GameEngine/src/Core/Base/Pixel.cpp ====================
+
+#include "../../../include/Pixel.h"
+
+Pixel::Pixel() {
+  m_position = Position();
+  m_character = ' ';
+  // m_backgroundColor = RGB(0, 0, 0);
+  // m_textColor = RGB(1000, 1000, 1000);
+}
+
+Pixel::Pixel(Position position, char character) {
+  m_position = position;
+  m_character = character;
+  // m_backgroundColor = RGB(0, 0, 0);
+  // m_textColor = RGB(1000, 1000, 1000);
+};
+
+// Pixel::Pixel(Position position, char character, RGB textColor,
+//              RGB backgroundColor) {
+//   m_position = position;
+//   m_character = character;
+//   m_textColor = textColor;
+//   m_backgroundColor = backgroundColor;
+// };
+
+void Pixel::setCharacter(char character) { m_character = character; };
+
+void Pixel::setPosition(Position position) { m_position = position; };
+
+Position Pixel::getPosition() const { return m_position; }
+
+char Pixel::getCharacter() const { return m_character; };
+
+void Pixel::displace(int dx, int dy) {
+  int newX = m_position.getX() + dx;
+  int newY = m_position.getY() + dy;
+  m_position = Position(newX, newY);
+}
+
+// void Pixel::setTextColor(RGB textColor) { m_textColor = textColor; }
+
+// void Pixel::setBackgroundColor(RGB backgroundColor) {
+//   m_backgroundColor = backgroundColor;
+// }
+
+// RGB Pixel::getTextColor() { return m_textColor; }
+
+// RGB Pixel::getBackgroundColor() { return m_backgroundColor; }
+
+// ==================== GameEngine/src/Core/Base/Position.cpp ====================
+
+#include "../../../include/Position.h"
+
+Position::Position() {
+  m_x = 0;
+  m_y = 0;
+}
+
+Position::Position(int x, int y) {
+  m_x = x;
+  m_y = y;
+};
+
+int Position::getX() { return m_x; };
+
+int Position::getY() { return m_y; };
+
+void Position::setX(int x) { m_x = x; };
+
+void Position::setY(int y) { m_y = y; };
+
+void Position::setPosition(int x, int y) {
+  setX(x);
+  setY(y);
+};
+
+// ==================== GameEngine/src/Core/Base/Printable.cpp ====================
+
+#include "../../../include/Printable.h"
+#include "../../../include/Animation.h"
+
+Printable::Printable() {
+  m_currentAnimation = "default";
+  m_animations.push_back(Animation());
+  m_visable = false;
+  m_layer = 0;
+  m_anchor = Position(0, 0);
+  m_static = false;
+}
+
+void Printable::addAnimation(const Animation animation) {
+  m_animations.push_back(animation);
+};
+
+bool Printable::setCurrentAnimation(const std::string name) {
+  for (Animation animation : m_animations) {
+    if (animation.getAnimationName() == name) {
+      m_currentAnimation = animation.getAnimationName();
+      return true;
+    }
+  }
+  return false; // If not loaded, stays as current animation
+};
+
+std::string Printable::getCurrentAnimationName() { return m_currentAnimation; };
+
+std::vector<Animation> &Printable::getAnimations() { return m_animations; };
+
+Position Printable::getAnchor() { return m_anchor; }
+
+void Printable::displace(int dx, int dy) {
+  for (Animation &animation : m_animations) {
+    if (m_currentAnimation == animation.getAnimationName()) {
+      m_dirtySprites.push_back(animation.getCurrentFrameSprite());
+      animation.displace(dx, dy);
+      m_anchor = Position(m_anchor.getX() + dx, m_anchor.getY() + dy);
+      break;
+    }
+  }
+};
+
+void Printable::moveToPosition(Position position) {
+  int difX = position.getX() - m_anchor.getX();
+  int difY = position.getY() - m_anchor.getY();
+  displace(difX, difY);
+  m_anchor = position;
+};
+
+bool Printable::isVisable() { return m_visable; };
+
+int Printable::getLayer() { return m_layer; };
+
+void Printable::setVisability(bool visable) { m_visable = visable; };
+
+void Printable::setLayer(int layer) { m_layer = layer; }
+
+bool Printable::isMoveableByCamera() { return m_moveableByCamera; };
+
+void Printable::setMoveableByCamera(bool moveableByCamera) {
+  m_moveableByCamera = moveableByCamera;
+};
+
+Animation &Printable::getCurrentAnimation() {
+  for (Animation &animation : m_animations) {
+    if (m_currentAnimation == animation.getAnimationName()) {
+      return animation;
+    }
+  }
+  return m_animations.at(0);
+}
+
+bool Printable::isStatic() { return m_static; }
+
+void Printable::setStatic(bool staticAni) { m_static = staticAni; }
+
+std::vector<Sprite> &Printable::getDirtySprites() { return m_dirtySprites; }
+
+void Printable::addDirtySprite(Sprite dirtySprite) {
+  m_dirtySprites.push_back(dirtySprite);
+}
+
+// ==================== GameEngine/src/Core/Base/RGB.cpp ====================
+
+#include "../../../include/RGB.h"
+
+RGB::RGB() {
+  m_r = 0;
+  m_g = 0;
+  m_b = 0;
+}
+
+RGB::RGB(int r, int g, int b) {
+  if (r > 1000) {
+    m_r = 1000;
+  } else if (r < 0) {
+    m_r = 0;
+  } else {
+    m_r = r;
+  }
+
+  if (g > 1000) {
+    m_g = 1000;
+  } else if (g < 0) {
+    m_g = 0;
+  } else {
+    m_g = g;
+  }
+
+  if (b > 1000) {
+    m_b = 1000;
+  } else if (b < 0) {
+    m_b = 0;
+  } else {
+    m_b = b;
+  }
+}
+
+int RGB::getR() { return m_r; }
+
+int RGB::getG() { return m_g; }
+
+int RGB::getB() { return m_b; }
+
+void RGB::setR(int r) {
+  if (r > 1000) {
+    m_r = 1000;
+  } else if (r < 0) {
+    m_r = 0;
+  } else {
+    m_r = r;
+  }
+}
+
+void RGB::setG(int g) {
+  if (g > 1000) {
+    m_g = 1000;
+  } else if (g < 0) {
+    m_g = 0;
+  } else {
+    m_g = g;
+  }
+}
+
+void RGB::setB(int b) {
+  if (b > 1000) {
+    m_b = 1000;
+  } else if (b < 0) {
+    m_b = 0;
+  } else {
+    m_b = b;
+  }
+}
+
+// ==================== GameEngine/src/Core/Base/Sprite.cpp ====================
+
+#include "../../../include/Sprite.h"
+
+Sprite::Sprite() { m_pixels = std::vector<Pixel>(); };
+
+Sprite::Sprite(std::vector<Pixel> pixels) { m_pixels = pixels; };
+
+void Sprite::addPixel(Pixel pixel) { m_pixels.emplace_back(pixel); };
+
+const std::vector<Pixel> &Sprite::getPixels() const { return m_pixels; }
+
+void Sprite::displace(int dx, int dy) {
+  for (Pixel &pixel : m_pixels) {
+    pixel.displace(dx, dy);
+  }
+}
+
+// ==================== GameEngine/src/Core/Logic/GameEngine.cpp ====================
+
+#include "../../../include/GameEngine.h"
+#include <chrono>
+#include <cstdlib>
+#include <cstring>
+#include <ncurses.h>
+#include <thread>
+#include <unistd.h>
+
+using Clock = std::chrono::steady_clock;
+
+void GameEngine::run() {
+  userInput = 0;
+  auto lastTime = Clock::now();
+
+  Display::initCurse();
+  engineRunning = true;
+
+  while (engineRunning) {
+    // --- Time Tracking ---
+    auto currentTime = Clock::now();
+    std::chrono::duration<float> delta = currentTime - lastTime;
+    float deltaTime = delta.count();
+    lastTime = currentTime;
+
+    // --- Input Handling ---
+    int ch;
+    while ((ch = getch()) != ERR) {
+      userInput = ch;
+      if (userInput == '`')
+        engineRunning = false;
+    }
+    // State Update
+    currentState->update();
+    GameState *next = currentState->getNextState();
+    if (next) {
+      currentState->onExit();
+      delete currentState;
+      currentState = next;
+      currentState->onEnter();
+    }
+
+    // --- Refresh display using actual deltaTime ---
+    Display::refreshDisplay(deltaTime);
+
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(1)); // Prevent CPU maxing out
+  }
+
+  exit();
+}
+
+void GameEngine::exit() { Display::closeCurseWindow(); }
+
+// ==================== GameEngine/src/Core/Objects/Camera.cpp ====================
+
+#include "../../../include/Camera.h"
+#include "../../../include/Parameters.h"
+
+Camera::Camera() {
+  m_length = 80;
+  m_height = 24;
+  m_lengthOffset = 0;
+  m_heightOffset = 0;
+  m_lastLengthOffset = 0;
+  m_lastHeightOffset = 0;
+};
+
+Camera::Camera(int length, int height) {
+  m_length = length;
+  m_height = height;
+  m_lengthOffset = 0;
+  m_heightOffset = 0;
+  m_lastLengthOffset = 0;
+  m_lastHeightOffset = 0;
+};
+
+void Camera::displaceViewPort(int dx, int dy) {
+  if (dx != 0 || dy != 0) {
+    displayNeedsCleared = true;
+  }
+  m_lengthOffset += dx;
+  m_heightOffset += dy;
+}
+
+int Camera::getLength() { return m_length; }
+void Camera::setLength(int length) { m_length = length; }
+
+int Camera::getHeight() { return m_height; }
+void Camera::setHeight(int height) { m_height = height; }
+
+int Camera::getHeightOffset() { return m_heightOffset; }
+
+int Camera::getLengthOffset() { return m_lengthOffset; }
+
+// ==================== GameEngine/src/Core/Objects/Entity.cpp ====================
+
+#include "../../../include/Entity.h"
+
+Entity::Entity() {
+  m_entityName = "none";
+  m_currentAnimation = "default";
+  m_animations.push_back(Animation());
+  m_visable = false;
+  m_layer = 0;
+  m_moveableByCamera = true;
+  m_anchor = Position(0, 0);
+  Sprite m_spriteBeforeMove = Sprite();
+  m_static = false;
+};
+
+Entity::Entity(std::string entityName, std::vector<Animation> animations,
+               bool visable, int layer, bool moveableByCamera) {
+  m_entityName = entityName;
+  m_animations = animations;
+
+  if (!animations.empty()) {
+    m_currentAnimation = animations.at(0).getAnimationName();
+  } else {
+    std::cerr << "Warning: Entity \"" << entityName << "\" has no animations!"
+              << std::endl;
+    m_currentAnimation = "none";
+    m_static = false;
+  }
+
+  m_currentAnimation =
+      animations.at(0).getAnimationName(); // Default is first loaded animation,
+                                           // change manually
+  m_visable = visable;
+  m_layer = layer;
+  m_moveableByCamera = moveableByCamera;
+  m_anchor = Position(0, 0);
+  Sprite m_spriteBeforeMove = Sprite();
+};
+
+std::string Entity::getEntityName() { return m_entityName; }
+
+void Entity::setEntityName(std::string entityName) {
+  m_entityName = entityName;
+};
+
+bool Entity::positionInBoundsOfEntity(Position position) {
+  for (const Pixel &pixel :
+       getCurrentAnimation().getCurrentFrameSprite().getPixels()) {
+    if (pixel.getPosition().getX() == position.getX() &&
+        pixel.getPosition().getY() == position.getY()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// ==================== GameEngine/src/Core/Objects/GameObject.cpp ====================
+
+#include "../../../include/GameObject.h"
+
+GameObject::GameObject() {
+  m_visable = false;
+  m_layer = 0;
+  m_moveableByCamera = true;
+  m_currentAnimation = "default";
+  m_animations.push_back(Animation());
+  m_anchor = Position(0, 0);
+  m_static = false;
+};
+
+GameObject::GameObject(bool visable, int layer, bool moveableByCamera,
+                       std::vector<Animation> animations,
+                       std::string currentAnimation) {
+  m_visable = visable;
+  m_layer = layer;
+  m_moveableByCamera = moveableByCamera;
+  m_animations = animations;
+  m_currentAnimation = currentAnimation;
+  m_anchor = Position(0, 0);
+  m_static = false;
+};
+
+// ==================== GameEngine/src/Core/UI/Button.cpp ====================
+
+#include "../../../include/Button.h"
+
+Button::Button() {
+  m_entity = nullptr;
+  m_minPosition = Position(0, 0);
+  m_maxPosition = Position(0, 0);
+};
+
+Button::Button(std::shared_ptr<Entity> entity, std::function<void()> function) {
+  m_minPosition = Position(0, 0);
+  m_maxPosition = Position(0, 0);
+  m_entity = entity;
+  setFunction(function);
+  setBoundsBasedOnEntity();
+}
+
+void Button::setFunction(std::function<void()> func) {
+  m_function = std::move(func);
+};
+
+void Button::executeFunction() {
+  if (m_function) {
+    m_function();
+  } else {
+    { return; }
+  }
+};
+
+bool Button::mouseInBounds(int x, int y) {
+  return m_entity->positionInBoundsOfEntity(Position(x, y));
+}
+
+void Button::displace(int dx, int dy) {
+  m_minPosition =
+      Position(m_minPosition.getX() + dx, m_minPosition.getY() + dy);
+  m_maxPosition =
+      Position(m_maxPosition.getX() + dx, m_maxPosition.getY() + dy);
+  m_entity->displace(dx, dy);
+}
+
+void Button::setBoundsBasedOnEntity() {
+  int minX = m_minPosition.getX();
+  int maxX = m_maxPosition.getX();
+  int minY = m_minPosition.getY();
+  int maxY = m_maxPosition.getY();
+
+  for (Frame frames : m_entity->getCurrentAnimation().getFrames()) {
+    for (const Pixel &pixel : frames.getSprite().getPixels()) {
+      int x = pixel.getPosition().getX();
+      int y = pixel.getPosition().getY();
+
+      if (x < minX) {
+        minX = x;
+      } else if (x > maxX) {
+        maxX = x;
+      }
+
+      if (y < minY) {
+        minY = y;
+      } else if (y > maxY) {
+        maxY = y;
+      }
+    }
+  }
+  m_minPosition = Position(minX, minY);
+  m_maxPosition = Position(maxX, maxY);
+}
+
+// ==================== GameEngine/src/Core/UI/UIElement.cpp ====================
+
+#include "../../../include/UIElement.h"
+#include "../../../include/Parameters.h"
+
+// Define all static member variables
+std::vector<std::shared_ptr<UIElement>> UIElement::topMiddleUIElements;
+std::vector<std::shared_ptr<UIElement>> UIElement::rightMiddleUIElements;
+std::vector<std::shared_ptr<UIElement>> UIElement::bottomMiddleUIElements;
+std::vector<std::shared_ptr<UIElement>> UIElement::leftMiddleUIElements;
+std::vector<std::shared_ptr<UIElement>> UIElement::middleUIElements;
+std::vector<std::shared_ptr<UIElement>> UIElement::topLeftUIElements;
+std::vector<std::shared_ptr<UIElement>> UIElement::topRightUIElements;
+std::vector<std::shared_ptr<UIElement>> UIElement::bottomLeftUIElements;
+std::vector<std::shared_ptr<UIElement>> UIElement::bottomRightUIElements;
+
+UIElement::UIElement() {
+  m_minPosition = Position(0, 0);
+  m_maxPosition = Position(0, 0);
+  m_entity = nullptr;
+  m_lockPosition = ScreenLockPosition::NONE;
+}
+
+UIElement::UIElement(std::shared_ptr<Entity> entity) {
+  m_entity = entity;
+  m_lockPosition = ScreenLockPosition::NONE;
+  setPositions();
+}
+
+void UIElement::setPositions() {
+  m_minPosition = m_entity->getAnchor();
+  int maxX = 0;
+  int maxY = 0;
+
+  for (Animation animation : m_entity->getAnimations()) {
+    if (animation.getAnimationName() == m_entity->getCurrentAnimationName()) {
+      for (const Pixel &pixel : animation.getCurrentFrameSprite().getPixels()) {
+        if (pixel.getPosition().getX() > maxX)
+          maxX = pixel.getPosition().getX();
+        if (pixel.getPosition().getY() > maxY)
+          maxY = pixel.getPosition().getY();
+      }
+    }
+  }
+
+  m_maxPosition = Position(maxX, maxY);
+}
+
+void UIElement::setDynamicPosition(ScreenLockPosition position,
+                                   StackDirection direction) {
+  m_lockPosition = position;
+  m_stackDirection = direction;
+  switch (m_lockPosition) {
+  case ScreenLockPosition::TOP_MIDDLE:
+    topMiddleUIElements.push_back(shared_from_this());
+    break;
+  case ScreenLockPosition::RIGHT_MIDDLE:
+    rightMiddleUIElements.push_back(shared_from_this());
+    break;
+  case ScreenLockPosition::BOTTOM_MIDDLE:
+    bottomMiddleUIElements.push_back(shared_from_this());
+    break;
+  case ScreenLockPosition::LEFT_MIDDLE:
+    leftMiddleUIElements.push_back(shared_from_this());
+    break;
+  case ScreenLockPosition::CENTER:
+    middleUIElements.push_back(shared_from_this());
+    break;
+  case ScreenLockPosition::TOP_LEFT_CORNER:
+    topLeftUIElements.push_back(shared_from_this());
+    break;
+  case ScreenLockPosition::TOP_RIGHT_CORNER:
+    topRightUIElements.push_back(shared_from_this());
+    break;
+  case ScreenLockPosition::BOTTOM_LEFT_CORNER:
+    bottomLeftUIElements.push_back(shared_from_this());
+    break;
+  case ScreenLockPosition::BOTTOM_RIGHT_CORNER:
+    bottomRightUIElements.push_back(shared_from_this());
+    break;
+
+  default:
+    break;
+  }
+  m_stackDirection = direction;
+}
+
+void UIElement::updateAllLockedPositions() {
+  // Helper lambdas
+  auto elementWidth = [](const std::shared_ptr<UIElement> &el) {
+    return el->m_maxPosition.getX() - el->m_minPosition.getX() + 1;
+  };
+  auto elementHeight = [](const std::shared_ptr<UIElement> &el) {
+    return el->m_maxPosition.getY() - el->m_minPosition.getY() + 1;
+  };
+
+  // --- TOP MIDDLE ---
+  {
+    int totalWidth = 0;
+    for (auto &el : topMiddleUIElements) {
+      el->setPositions();
+      el->m_entity->moveToPosition(Position(0, 0));
+      el->setPositions();
+      totalWidth += elementWidth(el);
+    }
+    int dx = (SCREEN_LENGTH - totalWidth) / 2;
+    for (auto &el : topMiddleUIElements) {
+      el->m_entity->moveToPosition(Position(dx, 0));
+      el->setPositions();
+      dx += elementWidth(el);
+    }
+  }
+
+  // --- RIGHT MIDDLE ---
+  {
+    int totalHeight = 0;
+    for (auto &el : rightMiddleUIElements) {
+      el->setPositions();
+      el->m_entity->moveToPosition(Position(0, 0));
+      el->setPositions();
+      totalHeight += elementHeight(el);
+    }
+    int dy = (SCREEN_HEIGHT - totalHeight) / 2;
+    for (auto &el : rightMiddleUIElements) {
+      int x = SCREEN_LENGTH - elementWidth(el);
+      el->m_entity->moveToPosition(Position(x, dy));
+      el->setPositions();
+      dy += elementHeight(el);
+    }
+  }
+
+  // --- BOTTOM MIDDLE ---
+  {
+    int totalWidth = 0;
+    for (auto &el : bottomMiddleUIElements) {
+      el->setPositions();
+      el->m_entity->moveToPosition(Position(0, 0));
+      el->setPositions();
+      totalWidth += elementWidth(el);
+    }
+    int dx = (SCREEN_LENGTH - totalWidth) / 2;
+    int y = SCREEN_HEIGHT - 1; // bottom row
+    for (auto &el : bottomMiddleUIElements) {
+      el->m_entity->moveToPosition(Position(dx, y - elementHeight(el) + 1));
+      el->setPositions();
+      dx += elementWidth(el);
+    }
+  }
+
+  // --- LEFT MIDDLE ---
+  {
+    int totalHeight = 0;
+    for (auto &el : leftMiddleUIElements) {
+      el->setPositions();
+      el->m_entity->moveToPosition(Position(0, 0));
+      el->setPositions();
+      totalHeight += elementHeight(el);
+    }
+    int dy = (SCREEN_HEIGHT - totalHeight) / 2;
+    for (auto &el : leftMiddleUIElements) {
+      el->m_entity->moveToPosition(Position(0, dy));
+      el->setPositions();
+      dy += elementHeight(el);
+    }
+  }
+
+  // --- CENTER ---
+  {
+    int totalWidth = 0;
+    int maxHeight = 0;
+    for (auto &el : middleUIElements) {
+      el->setPositions();
+      el->m_entity->moveToPosition(Position(0, 0));
+      el->setPositions();
+      totalWidth += elementWidth(el);
+      if (elementHeight(el) > maxHeight)
+        maxHeight = elementHeight(el);
+    }
+    int dx = (SCREEN_LENGTH - totalWidth) / 2;
+    int y = (SCREEN_HEIGHT - maxHeight) / 2;
+    for (auto &el : middleUIElements) {
+      el->m_entity->moveToPosition(Position(dx, y));
+      el->setPositions();
+      dx += elementWidth(el);
+    }
+  }
+
+  // --- TOP LEFT CORNER ---
+  {
+    int dx = 0;
+    int dy = 0;
+    for (auto &el : topLeftUIElements) {
+      el->setPositions();
+      el->m_entity->moveToPosition(Position(dx, dy));
+      el->setPositions();
+
+      if (el->m_stackDirection == StackDirection::HORIZONTAL) {
+        dx += elementWidth(el);
+      } else {
+        dy += elementHeight(el);
+      }
+    }
+  }
+
+  // --- TOP RIGHT CORNER ---
+  {
+    int dx = SCREEN_LENGTH;
+    int dy = 0;
+    for (auto &el : topRightUIElements) {
+      el->setPositions();
+
+      if (el->m_stackDirection == StackDirection::HORIZONTAL) {
+        dx -= elementWidth(el);
+        el->m_entity->moveToPosition(Position(dx, dy));
+        dx -= 0; // no-op
+      } else {
+        el->m_entity->moveToPosition(Position(dx - elementWidth(el), dy));
+        dy += elementHeight(el);
+      }
+
+      el->setPositions();
+    }
+  }
+
+  // --- BOTTOM LEFT CORNER ---
+  {
+    int dx = 0;
+    int dy = SCREEN_HEIGHT;
+    for (auto &el : bottomLeftUIElements) {
+      el->setPositions();
+
+      if (el->m_stackDirection == StackDirection::HORIZONTAL) {
+        el->m_entity->moveToPosition(Position(dx, dy - elementHeight(el)));
+        dx += elementWidth(el);
+      } else {
+        dy -= elementHeight(el);
+        el->m_entity->moveToPosition(Position(dx, dy));
+      }
+
+      el->setPositions();
+    }
+  }
+
+  // --- BOTTOM RIGHT CORNER ---
+  {
+    int dx = SCREEN_LENGTH;
+    int dy = SCREEN_HEIGHT;
+    for (auto &el : bottomRightUIElements) {
+      el->setPositions();
+
+      if (el->m_stackDirection == StackDirection::HORIZONTAL) {
+        dx -= elementWidth(el);
+        el->m_entity->moveToPosition(Position(dx, dy - elementHeight(el)));
+      } else {
+        dy -= elementHeight(el);
+        el->m_entity->moveToPosition(Position(dx - elementWidth(el), dy));
+      }
+
+      el->setPositions();
+    }
+  }
+}
+
+// ==================== GameEngine/src/Display/Display.cpp ====================
+
+#include "../../include/Display.h"
+#include <ncurses.h>
+
+// Initialize static members
+std::vector<std::vector<char>> Display::currentFrameBuffer;
+std::vector<std::vector<char>> Display::lastFrameBuffer;
+
+void Display::initCurse() {
+  setlocale(LC_ALL, "");
+  initscr(); // Start curses mode
+  curs_set(0);
+  noecho();
+  cbreak();
+  keypad(stdscr, TRUE);
+  nodelay(stdscr, TRUE);
+  mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+  mouseinterval(0);
+  printf("\033[?1003h\n"); // Enable mouse tracking
+
+  start_color();
+  use_default_colors();          // So color pair -1 uses terminal default
+  init_pair(1, COLOR_RED, -1);   // Sample pair
+  init_pair(2, COLOR_GREEN, -1); // Add as needed
+
+  getmaxyx(stdscr, SCREEN_HEIGHT, SCREEN_LENGTH);
+  currentFrameBuffer = std::vector<std::vector<char>>(
+      SCREEN_HEIGHT, std::vector<char>(SCREEN_LENGTH, ' '));
+  lastFrameBuffer = currentFrameBuffer;
+}
+
+char Display::getUserInput() { return getch(); }
+
+void Display::closeCurseWindow() {
+  printf("\033[?1003l\n"); // Disable mouse tracking
+  endwin();
+}
+
+void Display::refreshDisplay(float deltaTime) {
+  int tempHeight, tempLength;
+  getmaxyx(stdscr, tempHeight, tempLength);
+
+  if (tempHeight != SCREEN_HEIGHT || tempLength != SCREEN_LENGTH) {
+    SCREEN_HEIGHT = tempHeight;
+    SCREEN_LENGTH = tempLength;
+
+    currentCamera->setHeight(SCREEN_HEIGHT);
+    currentCamera->setLength(SCREEN_LENGTH);
+    UIElement::updateAllLockedPositions();
+
+    currentFrameBuffer = std::vector<std::vector<char>>(
+        SCREEN_HEIGHT, std::vector<char>(SCREEN_LENGTH, ' '));
+    lastFrameBuffer = currentFrameBuffer;
+    displayNeedsCleared = true;
+  }
+
+  if (displayNeedsCleared) {
+    clear();
+    for (auto &row : currentFrameBuffer)
+      std::fill(row.begin(), row.end(), ' ');
+    for (auto &row : lastFrameBuffer)
+      std::fill(row.begin(), row.end(), ' ');
+    displayNeedsCleared = false;
+  }
+
+  refreshEntities(deltaTime);
+
+  // Draw diffs
+  for (int y = 0; y < SCREEN_HEIGHT; ++y) {
+    for (int x = 0; x < SCREEN_LENGTH; ++x) {
+      if (currentFrameBuffer[y][x] != lastFrameBuffer[y][x]) {
+        mvaddch(y, x, currentFrameBuffer[y][x]);
+        lastFrameBuffer[y][x] = currentFrameBuffer[y][x];
+      }
+    }
+  }
+
+  wnoutrefresh(stdscr);
+  doupdate();
+  curs_set(0);
+}
+
+void Display::printPixel(const Pixel pixel, bool isMoveableByCamera) {
+  int printedX = pixel.getPosition().getX();
+  int printedY = pixel.getPosition().getY();
+
+  if (isMoveableByCamera) {
+    printedX += currentCamera->getLengthOffset();
+    printedY += currentCamera->getHeightOffset();
+  }
+
+  if (printedX >= 0 && printedX < SCREEN_LENGTH && printedY >= 0 &&
+      printedY < SCREEN_HEIGHT) {
+    currentFrameBuffer[printedY][printedX] = pixel.getCharacter();
+  }
+}
+
+void Display::printSprite(Sprite sprite, bool isMoveableByCamera) {
+  for (const Pixel &pixel : sprite.getPixels()) {
+    printPixel(pixel, isMoveableByCamera);
+  }
+}
+
+void Display::eraseSprite(Sprite sprite, bool isMoveableByCamera) {
+  for (const Pixel &pixel : sprite.getPixels()) {
+    printPixel(Pixel(pixel.getPosition(), ' '), isMoveableByCamera);
+  }
+}
+
+void Display::refreshEntities(float deltaTime) {
+  if (printablesNeedSorted) {
+    std::sort(allPrintables.begin(), allPrintables.end(),
+              [](const std::shared_ptr<Printable> &a,
+                 const std::shared_ptr<Printable> &b) {
+                return a->getLayer() < b->getLayer();
+              });
+    printablesNeedSorted = false;
+  }
+
+  for (auto &printable : allPrintables) {
+    for (Animation &animation : printable->getAnimations()) {
+      if (animation.getAnimationName() ==
+          printable->getCurrentAnimationName()) {
+        if (!printable->isStatic() && animation.isPlaying()) {
+          animation.update(deltaTime);
+          printable->addDirtySprite(animation.getPreviousFrameSprite());
+        }
+
+        for (const Sprite &sprite : printable->getDirtySprites()) {
+          eraseSprite(sprite, printable->isMoveableByCamera());
+        }
+        printable->getDirtySprites().clear();
+        printSprite(animation.getCurrentFrameSprite(),
+                    printable->isMoveableByCamera());
+      }
+    }
+  }
+}
+
+// ==================== GameEngine/src/Parameters/Parameters.cpp ====================
+
+#include "../../include/Parameters.h"
+
+std::vector<std::shared_ptr<Printable>> allPrintables;
+bool printablesNeedSorted = true;
+
+std::shared_ptr<Camera> currentCamera;
+
+std::shared_ptr<Entity> playerEntity;
+
+int SCREEN_HEIGHT = 24;
+int SCREEN_LENGTH = 80;
+
+int userInput = 0;
+bool engineRunning = false;
+bool displayNeedsCleared = false;
+
+// ==================== GameEngine/src/Utils/FileLoading.cpp ====================
+
+#include "../../include/FileLoading.h"
+#include <algorithm>
+#include <filesystem>
+#include <memory>
+#include <string>
+
+Sprite getSpriteFromTextFile(std::string fileLocation) {
+  std::ifstream inputFile(fileLocation);
+
+  if (!inputFile.is_open()) {
+    std::cerr << "Error opening the file: " << fileLocation << std::endl;
+    std::vector<Pixel> errorPixels;
+    errorPixels.push_back(Pixel(Position(0, 0), '~'));
+    return Sprite(errorPixels);
+  }
+
+  std::string line;
+  std::vector<Pixel> pixels;
+
+  std::size_t x = 0;
+  int y = 0;
+  while (getline(inputFile, line)) {
+    x = 0;
+    while (x < line.size()) {
+      pixels.push_back(Pixel(Position(x, y), line.at(x)));
+      x++;
+    }
+    y++;
+  }
+  inputFile.close();
+  return Sprite(pixels);
+}
+
+Frame getFrameFromTextFile(std::string fileLocation) {
+  std::ifstream inputFile(fileLocation);
+
+  if (!inputFile.is_open()) {
+    std::cerr << "Error opening the file: " << fileLocation << std::endl;
+    std::vector<Pixel> errorPixels;
+    errorPixels.push_back(Pixel(Position(0, 0), '~'));
+    return Frame(Sprite(errorPixels), 1.0f);
+  }
+
+  std::string line;
+  std::vector<Pixel> pixels;
+
+  getline(inputFile, line);
+  float duration = std::stof(line);
+
+  std::size_t x = 0;
+  int y = 0;
+  while (getline(inputFile, line)) {
+    x = 0;
+    while (x < line.size()) {
+      pixels.push_back(Pixel(Position(x, y), line.at(x)));
+      x++;
+    }
+    y++;
+  }
+  inputFile.close();
+  Sprite sprite = Sprite(pixels);
+  Frame newFrame = Frame(sprite, duration);
+  return newFrame;
+}
+
+namespace fs = std::filesystem;
+Animation loadAnimation(std::string entityName, std::string animationName,
+                        bool repeats) {
+  std::string folderPath = "src/Animations/" + entityName + "/" + animationName;
+  std::vector<Frame> frames;
+
+  try {
+    std::vector<fs::directory_entry> entries;
+    for (const auto &entry : fs::directory_iterator(folderPath)) {
+      if (entry.is_regular_file()) {
+        entries.push_back(entry);
+      }
+    }
+    // Sort by filename
+    std::sort(entries.begin(), entries.end(),
+              [](const fs::directory_entry &a, const fs::directory_entry &b) {
+                return a.path().filename().string() <
+                       b.path().filename().string();
+              });
+
+    for (const auto &entry : entries) {
+      std::string fileName = entry.path().filename().string();
+      std::string fullFilePath = folderPath + "/" + fileName;
+      std::cout << "Loading file: " << fullFilePath << std::endl;
+      frames.push_back(getFrameFromTextFile(fullFilePath));
+    }
+    return Animation(animationName, frames, repeats);
+  } catch (const fs::filesystem_error &e) {
+    std::cerr << "Filesystem error: " << e.what() << std::endl;
+    return Animation();
+  }
+}
+
+std::shared_ptr<Entity> loadPrintable(const std::string entityName,
+                                      bool visable, int layer,
+                                      bool moveableByCamera, bool staticAni) {
+  std::vector<Animation> animations;
+  std::string basePath = "src/Animations/" + entityName;
+
+  try {
+    for (const auto &entry : fs::directory_iterator(basePath)) {
+      if (entry.is_directory()) {
+        std::string animationName = entry.path().filename().string();
+        Animation anim = loadAnimation(entityName, animationName, true);
+        animations.push_back(anim);
+      }
+    }
+  } catch (const fs::filesystem_error &e) {
+    std::cerr << "Error loading animations for entity '" << entityName
+              << "': " << e.what() << std::endl;
+  }
+  auto entity = std::make_shared<Entity>(entityName, animations, visable, layer,
+                                         moveableByCamera);
+  entity->setStatic(staticAni);
+  allPrintables.push_back(entity);
+  printablesNeedSorted = true;
+  return entity;
+}
+
+std::shared_ptr<UIElement> loadUIElement(const std::string animationName,
+                                         bool visable, int layer,
+                                         bool moveableByCamera,
+                                         bool staticAni) {
+  auto UIEntity =
+      loadPrintable(animationName, visable, layer, moveableByCamera, staticAni);
+  return std::make_unique<UIElement>(UIElement(UIEntity));
+}
+
+std::shared_ptr<Button> loadButton(const std::string animationName,
+                                   bool visable, int layer,
+                                   bool moveableByCamera, bool staticAni,
+                                   std::function<void()> function) {
+  auto buttonEntity =
+      loadPrintable(animationName, visable, layer, moveableByCamera, staticAni);
+  return std::make_unique<Button>(Button(buttonEntity, function));
+}
+

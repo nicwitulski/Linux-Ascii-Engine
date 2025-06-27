@@ -1,7 +1,19 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// @file main.cpp
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief the application main that uses the gameEngine
+/// @version 0.1
+/// @date 2025-06-27
+///
+/// @copyright Copyright (c) 2025
+///
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #include "StateLogic/MainMenuState.h"
 
-int main() {
-  GameEngine engine(new StartAppState());
-  engine.run();
-  return 0;
+int main()
+{
+   GameEngine engine(new MainMenuState());
+   engine.run();
+   return 0;
 }
