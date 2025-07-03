@@ -19,6 +19,10 @@
 #include <memory>
 #include <vector>
 
+// Forward declaration
+class InputHandler;
+
+extern std::vector<std::shared_ptr<Printable>> printablesToSave;
 extern std::vector<std::shared_ptr<Printable>> allPrintables;
 extern bool                                    printablesNeedSorted;
 
@@ -31,5 +35,7 @@ extern int SCREEN_HEIGHT;
 extern int  userInput;
 extern bool engineRunning;
 extern bool displayNeedsCleared;
+
+extern InputHandler globalInputHandler;
 
 #endif

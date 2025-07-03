@@ -32,8 +32,8 @@
 class Display
 {
 private:
-   static std::vector<std::vector<char>> currentFrameBuffer;
-   static std::vector<std::vector<char>> lastFrameBuffer;
+   static std::vector<std::vector<Pixel>> currentFrameBuffer;
+   static std::vector<std::vector<Pixel>> lastFrameBuffer;
 
 public:
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////

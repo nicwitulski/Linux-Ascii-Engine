@@ -12,7 +12,7 @@
 #include "../../../include/UIElement.h"
 #include "../../../include/Parameters.h"
 
-// Define all static member variables
+// Define all static member variables 
 std::vector<std::shared_ptr<UIElement>> UIElement::topMiddleUIElements;
 std::vector<std::shared_ptr<UIElement>> UIElement::rightMiddleUIElements;
 std::vector<std::shared_ptr<UIElement>> UIElement::bottomMiddleUIElements;
@@ -26,9 +26,10 @@ std::vector<std::shared_ptr<UIElement>> UIElement::bottomRightUIElements;
 // public ----------------------------------------------------------------------------------------------------
 UIElement::UIElement()
 {
-   m_minPosition  = Position(0, 0);
-   m_maxPosition  = Position(0, 0);
-   m_lockPosition = ScreenLockPosition::NONE;
+   m_printableName = "default";
+   m_minPosition   = Position(0, 0);
+   m_maxPosition   = Position(0, 0);
+   m_lockPosition  = ScreenLockPosition::NONE;
 
    m_currentAnimationName = "default";
    m_animations.push_back(Animation());
@@ -38,8 +39,10 @@ UIElement::UIElement()
 };
 
 // public ----------------------------------------------------------------------------------------------------
-UIElement::UIElement(const std::vector<Animation> animations, const bool visable, const bool moveableByCamera)
+UIElement::UIElement(const std::string printableName, const std::vector<Animation> animations,
+                     const bool visable, const bool moveableByCamera)
 {
+   m_printableName           = printableName;
    m_animations              = animations;
    m_currentAnimationName    = m_animations.at(0).getAnimationName();
    m_visable                 = visable;

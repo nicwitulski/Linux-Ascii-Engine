@@ -10,7 +10,9 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../../include/Parameters.h"
+#include "../../include/InputHandler.h"
 
+std::vector<std::shared_ptr<Printable>> printablesToSave;
 std::vector<std::shared_ptr<Printable>> allPrintables;
 bool                                    printablesNeedSorted = true;
 
@@ -24,3 +26,5 @@ int SCREEN_LENGTH = 80;
 int  userInput           = 0;
 bool engineRunning       = false;
 bool displayNeedsCleared = false;
+
+InputHandler globalInputHandler;

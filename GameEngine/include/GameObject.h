@@ -26,8 +26,8 @@ class GameObject : public Printable
 protected:
 public:
    GameObject();
-   GameObject(const bool visable, const bool moveableByCamera, const std::vector<Animation> animations,
-              const std::string currentAnimation);
+   GameObject(const std::string printableName, const bool visable, const bool moveableByCamera,
+              const std::vector<Animation> animations, const std::string currentAnimation);
 };
 
 #endif

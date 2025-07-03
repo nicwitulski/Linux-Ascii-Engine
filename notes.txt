@@ -1,0 +1,39 @@
+Awesome, thank you. 
+
+I would now like you to help me finish the AsciiAnimator application. I currently have a lot of buttons but they don't do anything. Here is a summary of the features I would like in my animator application. Use my engine to help you implement these features. Define any new game states as needed. Edit the game engine to add new features to cleanly implement application where needed.
+
+Application features:
+MainMenu:
+Load animation from MainMenuState by inputing a Printable name string and animation name string. If the printable name is valid under AsciiAnimator/src/Animations/ , then load the inputted animation name under that directory and transition to editing. If the typed animation name or printable name is not valid, prompt the user to create that animation instead.
+
+Creating a new animation will enter the edit state with a blank project.
+
+Draw ASCII characters when holding down the left click button.
+
+Pan around the draw area with the middle mouse button.
+
+Have a button that, when pressed, will allow the user to input a keyboard character which will set the current drawing character to that new character.
+
+Allow the arrow keys to navigate the current drawing and allow keyboard inputs to print the inputed character at the location where the user is. Highlight the current character where the user's "cursor" is that they move with the arrow keys.
+
+Have two buttons that opens a small box with three sliders for each one. The sliders will be used to set a red, a green, and a blue value. One button (with three sliders) will be used for the text color. The other button (and sliders) will be used to set the background color. When the user draws or types, the pixel will then use the colors the user set. 
+
+Add a pipet button where the user can click a character and it'll set their current background and text colors to that clicked character.
+
+Add a button that'll toggle between color mode and draw mode. If in color mode, when drawing with the mouse, only pixels that have an ASCII color will be changed to the text and background color set. If they color over a white space in the mode, nothing will happen. This will allow the user to easily color their drawings.
+
+Ensure the settings the user sets are visable. For example, if a user sets a color, near the button print out an example color so they can see what they currently have set. This goes for the current selected drawing character too and the toggle between drawing and coloring mode.
+
+Add a next frame button which will grey out the current frame the user was just editing so they can still see it in the background. Any new edits won't effect the previous frame. Only display one greyed out previous frame at a time. Add a previous frame button too. The greyed out frame will be the next previous frame, not the "next" frame they were just on. If there is no more previous frames, don't display any grayed out frames.
+
+If there is no current next frame or previous frame, change the button text to "Create new next frame" or "Create new previous frame".
+
+Add a button that displays the duration in seconds for the frame the user is currently editting. If the they click the button, it'll allow them to set a new duration for that frame.
+
+Add a Play Animation button that will run their animation for all the frames they created for the duration they set them to. The animation will loop if they don't pause it after the last frame. Once they press the play animation button, change its test to "Pause Animation". If they press it, the animation will stop on the frame that it currently is on. The previous frame (if there is one) will then show up greyed out in the background (and cant be edited unless the user goes back to that frame).
+
+Add a button that'll toggle the greyed out previous frame. Pressing it will hide the previous frame and change the button's text to "show previous frame" instead of "hide previous frame". 
+
+Add a button labelled "Quit and save" that'll return the user back to the main menu and save their current animation project. When this button is pressed, prompt the user to enter another string with the Printable Name. If they loaded the animation project, this prompt will default to what they entered when they loaded it, else it'll be blank. Then, the animation will get saved to AsciiAnimator/src/Animations/PrintableName/AnimationName.
+
+This way, a printable can have multiple animation associated with it.

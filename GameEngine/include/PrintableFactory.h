@@ -16,9 +16,11 @@
 #include "Entity.h"
 #include "Parameters.h"
 #include "Printable.h"
+#include "InputHandler.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -32,8 +34,12 @@ public:
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn getFrameFromTextFile
    ///
-   /// @return loaded Frame from inputed fileLocation
-   /// @param fileLocation - fileLocation string from view of User Application root directory
+   /// Loads a Frame from a text file. The file format is:
+   /// First line: duration,layer
+   /// Next N lines: ASCII art
+   /// Next N lines: text RGB values (r,g,b per pixel, comma-separated, space between pixels)
+   /// Next N lines: background RGB values (r,g,b per pixel, comma-separated, space between pixels)
+   /// Next N lines: attribute values (integer per pixel, space between pixels)
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    static Frame getFrameFromTextFile(const std::string fileLocation);
 
@@ -59,7 +65,7 @@ public:
    /// @param layer
    /// @param movemableByCamera
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-   static std::shared_ptr<Entity> loadEntity(const std::string entityName, const bool visable,
+   static std::shared_ptr<Entity> loadEntity(const std::string directoryLocation, const bool visable,
                                              const bool moveableByCamera);
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -91,6 +97,49 @@ public:
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    static std::shared_ptr<Button> loadButton(const std::string directoryName, const bool visable,
                                              const bool moveableByCamera, std::function<void()> function);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn writePrintableToTextFiles
+   ///
+   /// Writes the given Printable object to .txt files in the format:
+   /// src/Animations/m_printableName/m_animationName/frameN.txt
+   /// Each animation is a folder, each frame is a .txt file.
+   /// Overwrites existing files.
+   ///
+   /// File format:
+   /// First line: duration,layer
+   /// Next N lines: ASCII art
+   /// Next N lines: text RGB values (r,g,b per pixel, comma-separated, space between pixels)
+   /// Next N lines: background RGB values (r,g,b per pixel, comma-separated, space between pixels)
+   /// Next N lines: attribute values (integer per pixel, space between pixels)
+   ///
+   /// @param printable - the Printable object to write
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   static void writePrintableToTextFiles(const std::shared_ptr<Printable>& printable);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn writePrintableToTextFiles
+   ///
+   /// Creates a button using the default sprite, visability = true, and moveableByCamera = false.
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   static std::shared_ptr<Button> newButton(std::string text,std::function<void()> function);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn newButton (template overload)
+   ///
+   /// Creates a button using the default sprite with a member function pointer.
+   /// Automatically wraps the member function in a lambda for cleaner syntax.
+   /// Usage: newButton("Click Me", &MyClass::myButtonFunc, this)
+   ///
+   /// @param text - The text to display on the button
+   /// @param memberFunc - Pointer to the member function to call
+   /// @param instance - Pointer to the class instance
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   template<typename T>
+   static std::shared_ptr<Button> newButton(std::string text, void (T::*memberFunc)(), T* instance)
+   {
+      return newButton(text, [instance, memberFunc]() { (instance->*memberFunc)(); });
+   }
 };
 
 #endif

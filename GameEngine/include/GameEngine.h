@@ -17,17 +17,19 @@
 #include "Frame.h"
 #include "GameObject.h"
 #include "GameState.h"
+#include "InputHandler.h"
 #include "Parameters.h"
 #include "Pixel.h"
 #include "Position.h"
 #include "Printable.h"
 #include "PrintableFactory.h"
+#include "Slider.h"
 #include "Sprite.h"
 #include "UIElement.h"
 #include <chrono>
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @class PrintableFactory
+/// @class GameEngine
 ///
 /// Highest level class, holds all needed includes. Create an instance of this object and call .run()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -43,3 +45,6 @@ public:
 
    void run();
 };
+
+// Global InputHandler instance
+extern InputHandler globalInputHandler;

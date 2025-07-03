@@ -17,7 +17,8 @@ Printable::Printable()
 {
    m_currentAnimationName = "default";
    m_animations.push_back(Animation());
-   m_visable = false;
+   m_visable       = false;
+   m_printableName = "default";
 };
 
 // public ----------------------------------------------------------------------------------------------------
@@ -156,4 +157,16 @@ void Printable::setAllAnimationSpriteLayers(const int layer)
    {
       animation.setAllSpriteLayers(layer);
    }
+};
+
+// public ----------------------------------------------------------------------------------------------------
+void Printable::setPrintableName(const std::string name)
+{
+   m_printableName = name;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+const std::string& Printable::getPrintableName() const
+{
+   return m_printableName;
 };

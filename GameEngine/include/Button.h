@@ -23,13 +23,13 @@
 class Button : public UIElement
 {
 private:
-   virtual ~Button();
    std::function<void()> m_function;
 
 public:
+   virtual ~Button();
    Button();
-   Button(const std::vector<Animation> animations, const bool visable, const bool moveableByCamera,
-          std::function<void()> function);
+   Button(const std::string printableName, const std::vector<Animation> animations, const bool visable,
+          const bool moveableByCamera, std::function<void()> function);
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn setFunction
@@ -49,6 +49,14 @@ public:
    /// @param position - position of mouse to check bounds of
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    bool mouseInBounds(Position position);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn setText
+   ///
+   /// Sets the button text and wraps the outline around the new text
+   /// @param text - the new text to display on the button
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void setText(std::string text);
 };
 
 #endif
