@@ -18,7 +18,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @class MainMenuState
 ///
-/// Highest level class, holds all needed includes. Create an instance of this object and call .run()
+/// Main menu state that handles project creation and loading
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class MainMenuState : public GameState
 {
@@ -27,8 +27,7 @@ private:
    std::shared_ptr<Button>    newAnimationButton;
    std::shared_ptr<Button>    loadAnimationButton;
    std::shared_ptr<Button>    quitButton;
-
-   MEVENT event;
+   std::shared_ptr<Entity>    colorAttTest;
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn newAnimationFunction

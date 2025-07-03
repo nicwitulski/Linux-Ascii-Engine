@@ -9,12 +9,14 @@
 ///
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "../../include/Display.h"
+#include "../../include/Display.h" 
+#include "../../include/ColorManager.h"
 #include <ncurses.h>
+#include <cwchar>
 
 // Initialize static members
-std::vector<std::vector<char>> Display::currentFrameBuffer;
-std::vector<std::vector<char>> Display::lastFrameBuffer;
+std::vector<std::vector<Pixel>> Display::currentFrameBuffer;
+std::vector<std::vector<Pixel>> Display::lastFrameBuffer;
 
 // public static ---------------------------------------------------------------------------------------------
 void Display::initCurse()
@@ -30,14 +32,14 @@ void Display::initCurse()
    mouseinterval(0);
    printf("\033[?1003h\n"); // Enable mouse tracking
 
-   start_color();
-   use_default_colors();          // So color pair -1 uses terminal default
-   init_pair(1, COLOR_RED, -1);   // Sample pair
-   init_pair(2, COLOR_GREEN, -1); // Add as needed
-
    getmaxyx(stdscr, SCREEN_HEIGHT, SCREEN_LENGTH);
-   currentFrameBuffer = std::vector<std::vector<char>>(SCREEN_HEIGHT, std::vector<char>(SCREEN_LENGTH, ' '));
-   lastFrameBuffer    = currentFrameBuffer;
+   currentFrameBuffer =
+         std::vector<std::vector<Pixel>>(SCREEN_HEIGHT, std::vector<Pixel>(SCREEN_LENGTH, Pixel()));
+   lastFrameBuffer = currentFrameBuffer;
+
+   start_color();
+   use_default_colors();
+   ColorManager::initialize();
 }
 
 // public static ---------------------------------------------------------------------------------------------
@@ -69,7 +71,8 @@ void Display::refreshDisplay(float deltaTime)
 
       UIElement::updateAllLockedPositions();
 
-      currentFrameBuffer = std::vector<std::vector<char>>(SCREEN_HEIGHT, std::vector<char>(SCREEN_LENGTH, ' '));
+      currentFrameBuffer =
+            std::vector<std::vector<Pixel>>(SCREEN_HEIGHT, std::vector<Pixel>(SCREEN_LENGTH, Pixel()));
       lastFrameBuffer     = currentFrameBuffer;
       displayNeedsCleared = true;
    }
@@ -78,9 +81,9 @@ void Display::refreshDisplay(float deltaTime)
    {
       clear();
       for (auto& row : currentFrameBuffer)
-         std::fill(row.begin(), row.end(), ' ');
+         std::fill(row.begin(), row.end(), Pixel());
       for (auto& row : lastFrameBuffer)
-         std::fill(row.begin(), row.end(), ' ');
+         std::fill(row.begin(), row.end(), Pixel());
       displayNeedsCleared = false;
    }
 
@@ -91,10 +94,43 @@ void Display::refreshDisplay(float deltaTime)
    {
       for (int x = 0; x < SCREEN_LENGTH; ++x)
       {
-         if (currentFrameBuffer[y][x] != lastFrameBuffer[y][x])
+         const Pixel& curr = currentFrameBuffer[y][x];
+         const Pixel& last = lastFrameBuffer[y][x];
+         if (curr.getCharacter() != last.getCharacter() ||
+             curr.getTextColor().getR() != last.getTextColor().getR() ||
+             curr.getTextColor().getG() != last.getTextColor().getG() ||
+             curr.getTextColor().getB() != last.getTextColor().getB() ||
+             curr.getBackgroundColor().getR() != last.getBackgroundColor().getR() ||
+             curr.getBackgroundColor().getG() != last.getBackgroundColor().getG() ||
+             curr.getBackgroundColor().getB() != last.getBackgroundColor().getB() ||
+             curr.getAttributes() != last.getAttributes())
          {
-            mvaddch(y, x, currentFrameBuffer[y][x]);
-            lastFrameBuffer[y][x] = currentFrameBuffer[y][x];
+            attr_t attr      = curr.getAttributes();
+            RGB    fg        = curr.getTextColor();
+            RGB    bg        = curr.getBackgroundColor();
+            int    colorPair = ColorManager::getColorPair(fg, bg);
+
+            attrset(attr);
+            if (has_colors())
+            {
+               color_set(colorPair, NULL);
+            }
+            
+            // Use wide-character function for Unicode support
+            cchar_t wch;
+            wch.chars[0] = curr.getCharacter();
+            wch.chars[1] = L'\0';
+            wch.attr = attr;
+            wch.ext_color = colorPair;
+            mvadd_wch(y, x, &wch);
+            
+            attroff(attr);
+            if (has_colors())
+            {
+               color_set(0, NULL); // Reset to default after drawing
+            }
+
+            lastFrameBuffer[y][x] = curr;
          }
       }
    }
@@ -118,7 +154,7 @@ void Display::printPixel(const Pixel pixel, bool isMoveableByCamera)
 
    if (printedX >= 0 && printedX < SCREEN_LENGTH && printedY >= 0 && printedY < SCREEN_HEIGHT)
    {
-      currentFrameBuffer[printedY][printedX] = pixel.getCharacter();
+      currentFrameBuffer[printedY][printedX] = pixel;
    }
 }
 

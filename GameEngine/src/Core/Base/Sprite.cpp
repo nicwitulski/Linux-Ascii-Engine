@@ -107,6 +107,12 @@ const Position& Sprite::getAnchor() const
 };
 
 // public ----------------------------------------------------------------------------------------------------
+void Sprite::setAnchor(const Position anchor)
+{
+   m_anchor = anchor;
+};
+
+// public ----------------------------------------------------------------------------------------------------
 const int& Sprite::getLayer() const
 {
    return m_layer;
@@ -130,3 +136,10 @@ bool Sprite::positionInBounds(Position position) const
    }
    return false;
 }
+
+// public ----------------------------------------------------------------------------------------------------
+void Sprite::setPixels(const std::vector<Pixel> pixels)
+{
+   m_pixels = pixels;
+   refreshAnchor();
+};

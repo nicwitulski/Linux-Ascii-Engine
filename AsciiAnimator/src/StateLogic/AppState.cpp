@@ -16,7 +16,7 @@
 // public ----------------------------------------------------------------------------------------------------
 void AppState::onEnter()
 {
-   currentCamera = std::make_unique<Camera>(SCREEN_LENGTH, SCREEN_HEIGHT);
+   currentCamera = std::make_shared<Camera>(SCREEN_LENGTH, SCREEN_HEIGHT);
 
    currentFrame = Frame(Sprite(), 10);
    std::vector<Frame> allFrames;
@@ -28,148 +28,139 @@ void AppState::onEnter()
 
    userEntity = std::make_unique<Entity>(Entity("newEntity", allAnimations, true, true));
    allPrintables.push_back(userEntity);
+   printablesToSave.push_back(userEntity);
    playerEntity = userEntity;
 
    selectNewCharacter = false;
    drawingCharacter   = 'x';
 
-   currentCharacterButton = PrintableFactory::loadButton("currentCharacterButton", true, false,
-                                                         [this]() { this->currentCharacterButtonFunc(); });
-   currentCharacterButton->setAllAnimationSpriteLayers(100);
-   eraserSelectButton = PrintableFactory::loadButton("eraserSelectButton", true, false,
-                                                     [this]() { this->eraserSelectButtonFunc(); });
-   eraserSelectButton->setAllAnimationSpriteLayers(100);
-   frameLengthButton = PrintableFactory::loadButton("frameLengthButton", true, false,
-                                                    [this]() { this->frameLengthButtonFunc(); });
-   frameLengthButton->setAllAnimationSpriteLayers(100);
-   nextFrameButton = PrintableFactory::loadButton("nextFrameButton", true, false,
-                                                  [this]() { this->nextFrameButtonFunc(); });
-   nextFrameButton->setAllAnimationSpriteLayers(100);
-   playAnimationButton = PrintableFactory::loadButton("playAnimationButton", true, false,
-                                                      [this]() { this->playAnimationButtonFunc(); });
-   playAnimationButton->setAllAnimationSpriteLayers(100);
-   previousFrameButton = PrintableFactory::loadButton("previousFrameButton", true, false,
-                                                      [this]() { this->previousFrameButtonFunc(); });
-   previousFrameButton->setAllAnimationSpriteLayers(100);
-   quitButton = PrintableFactory::loadButton("quitButton", true, false, [this]() { this->quitButtonFunc(); });
-   quitButton->setAllAnimationSpriteLayers(100);
+   testSlider = std::make_shared<Slider>(Slider());
+   allPrintables.push_back(testSlider);
+   testSlider->getCurrentAnimationMutable().setAllSpriteLayers(200);
+   testSlider->setDynamicPosition(ScreenLockPosition::BOTTOM_LEFT_CORNER);
+
+   backgroundColorButton = PrintableFactory::newButton("Background Color", &AppState::backgroundColorButtonFunc, this);
+   textColorButton = PrintableFactory::newButton("Text Color", &AppState::textColorButtonFunc, this);
+   currentCharacterButton = PrintableFactory::newButton("Current Character", &AppState::currentCharacterButtonFunc, this);
+   eraserSelectButton = PrintableFactory::newButton("Eraser", &AppState::eraserSelectButtonFunc, this);
+   frameLengthButton = PrintableFactory::newButton("Frame Length", &AppState::frameLengthButtonFunc, this);
+   nextFrameButton = PrintableFactory::newButton("Next Frame", &AppState::nextFrameButtonFunc, this);
+   playAnimationButton = PrintableFactory::newButton("Play Animation", &AppState::playAnimationButtonFunc, this);
+   previousFrameButton = PrintableFactory::newButton("Previous Frame", &AppState::previousFrameButtonFunc, this);
+   quitButton = PrintableFactory::newButton("Quit", &AppState::quitButtonFunc, this);
 
    currentCharacterButton->setDynamicPosition(ScreenLockPosition::TOP_RIGHT_CORNER);
    eraserSelectButton->setDynamicPosition(ScreenLockPosition::TOP_RIGHT_CORNER);
    frameLengthButton->setDynamicPosition(ScreenLockPosition::TOP_RIGHT_CORNER);
 
+   textColorButton->setDynamicPosition(ScreenLockPosition::BOTTOM_MIDDLE);
+   backgroundColorButton->setDynamicPosition(ScreenLockPosition::BOTTOM_MIDDLE);
    previousFrameButton->setDynamicPosition(ScreenLockPosition::BOTTOM_MIDDLE, StackDirection::HORIZONTAL);
    nextFrameButton->setDynamicPosition(ScreenLockPosition::BOTTOM_MIDDLE, StackDirection::HORIZONTAL);
    playAnimationButton->setDynamicPosition(ScreenLockPosition::BOTTOM_MIDDLE, StackDirection::HORIZONTAL);
 
    quitButton->setDynamicPosition(ScreenLockPosition::TOP_LEFT_CORNER);
    UIElement::updateAllLockedPositions();
+
+   // Register UI elements with the global InputHandler
+   globalInputHandler.addSlider(testSlider);
 };
 
 // public ----------------------------------------------------------------------------------------------------
 void AppState::update()
 {
-   // Mouse Handling
-   // --------------
-   if (userInput == KEY_MOUSE)
+   // Handle character selection mode
+   if (selectNewCharacter)
    {
-      if (getmouse(&event) == OK)
+      drawingCharacter = userInput;
+      selectNewCharacter = false;
+   }
+   // Handle mouse input for drawing and camera
+   else if (userInput == KEY_MOUSE)
+   {
+      // Get the mouse event that was already processed by InputHandler
+      MEVENT* mouseEvent = globalInputHandler.getLastMouseEvent();
+      if (mouseEvent != nullptr)
       {
          // Camera Drag
-         if (event.bstate & BUTTON2_PRESSED)
+         if (mouseEvent->bstate & BUTTON2_PRESSED)
          {
             cameraDrag = true;
-            lastMousePosition.setX(event.x);
-            lastMousePosition.setY(event.y);
+            lastMousePosition.setX(mouseEvent->x);
+            lastMousePosition.setY(mouseEvent->y);
          }
-         if (event.bstate & BUTTON1_PRESSED)
+         if (mouseEvent->bstate & BUTTON1_PRESSED)
          {
-            drawing                = true;
-            Position mousePosition = Position(event.x, event.y);
+            drawing = true;
 
-            if (currentCharacterButton->mouseInBounds(mousePosition))
-            {
-               currentCharacterButton->executeFunction();
-            }
-            else if (eraserSelectButton->mouseInBounds(mousePosition))
-            {
-               eraserSelectButton->executeFunction();
-            }
-            else if (frameLengthButton->mouseInBounds(mousePosition))
-            {
-               frameLengthButton->executeFunction();
-            }
-            else if (nextFrameButton->mouseInBounds(mousePosition))
-            {
-               nextFrameButton->executeFunction();
-            }
-            else if (previousFrameButton->mouseInBounds(mousePosition))
-            {
-               previousFrameButton->executeFunction();
-            }
-            else if (playAnimationButton->mouseInBounds(mousePosition))
-            {
-               playAnimationButton->executeFunction();
-            }
-            else if (quitButton->mouseInBounds(mousePosition))
-            {
-               quitButton->executeFunction();
+            // Only draw if not over any UI element
+            Position mousePos(mouseEvent->x, mouseEvent->y);
+            if (!globalInputHandler.isMouseOverUI(mousePos)) {
+                int   worldX   = mouseEvent->x - currentCamera->getLengthOffset();
+                int   worldY   = mouseEvent->y - currentCamera->getHeightOffset();
+               Pixel newPixel = Pixel(Position(worldX, worldY), drawingCharacter);
+               userEntity->getCurrentAnimationMutable().addPixelToCurrentFrame(newPixel);
             }
          }
 
-         if (event.bstate & BUTTON2_RELEASED)
+         if (mouseEvent->bstate & BUTTON2_RELEASED)
          {
             cameraDrag = false;
             lastMousePosition.setX(-1);
             lastMousePosition.setY(-1);
          }
-         if (event.bstate & BUTTON1_RELEASED)
+         if (mouseEvent->bstate & BUTTON1_RELEASED)
          {
             drawing = false;
          }
 
-         if (event.bstate & (BUTTON1_RELEASED | BUTTON1_CLICKED))
+         if (mouseEvent->bstate & (BUTTON1_RELEASED | BUTTON1_CLICKED))
          {
             drawing = false;
          }
-         if (event.bstate & (BUTTON2_RELEASED | BUTTON2_CLICKED))
+         if (mouseEvent->bstate & (BUTTON2_RELEASED | BUTTON2_CLICKED))
          {
             cameraDrag = false;
          }
 
-         if (event.bstate & REPORT_MOUSE_POSITION)
+         if (mouseEvent->bstate & REPORT_MOUSE_POSITION)
          {
             if (cameraDrag)
             {
                // Calculate how much the mouse moved
-               int dx = lastMousePosition.getX() - event.x;
-               int dy = lastMousePosition.getY() - event.y;
+               int dx = lastMousePosition.getX() - mouseEvent->x;
+               int dy = lastMousePosition.getY() - mouseEvent->y;
 
                // Pan the camera accordingly
                currentCamera->displaceViewPort(-dx, -dy);
 
                // Update the last known position
-               lastMousePosition.setX(event.x);
-               lastMousePosition.setY(event.y);
+               lastMousePosition.setX(mouseEvent->x);
+               lastMousePosition.setY(mouseEvent->y);
             }
             else if (drawing)
             {
-               int   worldX   = event.x - currentCamera->getLengthOffset();
-               int   worldY   = event.y - currentCamera->getHeightOffset();
+               // Only draw if not over any UI element
+               Position mousePos(mouseEvent->x, mouseEvent->y);
+               if (!globalInputHandler.isMouseOverUI(mousePos)) {
+                   int   worldX   = mouseEvent->x - currentCamera->getLengthOffset();
+                   int   worldY   = mouseEvent->y - currentCamera->getHeightOffset();
                Pixel newPixel = Pixel(Position(worldX, worldY), drawingCharacter);
                userEntity->getCurrentAnimationMutable().addPixelToCurrentFrame(newPixel);
             }
          }
       }
    }
-   else if (selectNewCharacter)
-   {
-      drawingCharacter = userInput;
    }
 }
 
 // public ----------------------------------------------------------------------------------------------------
-void AppState::onExit() {}
+void AppState::onExit()
+{
+   clear();
+   allPrintables.clear();
+   globalInputHandler.clear();
+}
 
 // public ----------------------------------------------------------------------------------------------------
 GameState* AppState::getNextState()
@@ -239,3 +230,9 @@ void AppState::quitButtonFunc()
 {
    nextState = States::Quit;
 }
+
+// public ----------------------------------------------------------------------------------------------------
+void AppState::backgroundColorButtonFunc() {}
+
+// public ----------------------------------------------------------------------------------------------------
+void AppState::textColorButtonFunc() {}

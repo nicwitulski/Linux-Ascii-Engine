@@ -65,7 +65,8 @@ protected:
 
 public:
    UIElement();
-   UIElement(const std::vector<Animation> animations, const bool visable, const bool moveableByCamera);
+   UIElement(const std::string printableName, const std::vector<Animation> animations, const bool visable,
+             const bool moveableByCamera);
 
    static std::vector<std::shared_ptr<UIElement>> topMiddleUIElements;
    static std::vector<std::shared_ptr<UIElement>> rightMiddleUIElements;

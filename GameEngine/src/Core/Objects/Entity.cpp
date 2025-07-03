@@ -14,7 +14,7 @@
 // public ----------------------------------------------------------------------------------------------------
 Entity::Entity()
 {
-   m_entityName           = "none";
+   m_printableName        = "none";
    m_currentAnimationName = "default";
    m_animations.push_back(Animation());
    m_visable                 = false;
@@ -26,8 +26,8 @@ Entity::Entity()
 Entity::Entity(const std::string entityName, const std::vector<Animation> animations, const bool visable,
                const bool moveableByCamera)
 {
-   m_entityName = entityName;
-   m_animations = animations;
+   m_printableName = entityName;
+   m_animations    = animations;
 
    if (!animations.empty())
    {
@@ -44,18 +44,6 @@ Entity::Entity(const std::string entityName, const std::vector<Animation> animat
    m_visable                 = visable;
    m_moveableByCamera        = moveableByCamera;
    Sprite m_spriteBeforeMove = Sprite();
-};
-
-// public ----------------------------------------------------------------------------------------------------
-const std::string& Entity::getEntityName() const
-{
-   return m_entityName;
-};
-
-// public ----------------------------------------------------------------------------------------------------
-void Entity::setEntityName(const std::string entityName)
-{
-   m_entityName = entityName;
 };
 
 // public ----------------------------------------------------------------------------------------------------

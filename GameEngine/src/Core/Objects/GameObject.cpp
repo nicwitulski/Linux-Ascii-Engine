@@ -19,12 +19,14 @@ GameObject::GameObject()
    m_moveableByCamera     = true;
    m_currentAnimationName = "default";
    m_animations.push_back(Animation());
+   m_printableName = "default";
 };
 
 // public ----------------------------------------------------------------------------------------------------
-GameObject::GameObject(bool visable, bool moveableByCamera, std::vector<Animation> animations,
-                       std::string currentAnimation)
+GameObject::GameObject(const std::string printableName, bool visable, bool moveableByCamera,
+                       std::vector<Animation> animations, std::string currentAnimation)
 {
+   m_printableName        = printableName;
    m_visable              = visable;
    m_moveableByCamera     = moveableByCamera;
    m_animations           = animations;

@@ -14,6 +14,10 @@
 // public ----------------------------------------------------------------------------------------------------
 void QuitState::onEnter()
 {
+   for (const auto& printable : printablesToSave)
+   {
+      PrintableFactory::writePrintableToTextFiles(printable);
+   }
    engineRunning = false;
 }
 

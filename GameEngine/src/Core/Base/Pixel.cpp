@@ -18,28 +18,42 @@ Pixel::Pixel()
    m_character       = ' ';
    m_backgroundColor = RGB(0, 0, 0);
    m_textColor       = RGB(1000, 1000, 1000);
+   m_attributes      = A_NORMAL;
 };
 
 // public ----------------------------------------------------------------------------------------------------
-Pixel::Pixel(const Position position, const char character)
+Pixel::Pixel(const Position position, const wchar_t character)
 {
    m_position        = position;
    m_character       = character;
    m_backgroundColor = RGB(0, 0, 0);
    m_textColor       = RGB(1000, 1000, 1000);
+   m_attributes      = A_NORMAL;
 };
 
 // public ----------------------------------------------------------------------------------------------------
-Pixel::Pixel(const Position position, const char character, const RGB textColor, const RGB backgroundColor)
+Pixel::Pixel(const Position position, const wchar_t character, const RGB textColor, const RGB backgroundColor)
 {
    m_position        = position;
    m_character       = character;
    m_textColor       = textColor;
    m_backgroundColor = backgroundColor;
+   m_attributes      = A_NORMAL;
 };
 
 // public ----------------------------------------------------------------------------------------------------
-void Pixel::setCharacter(const char character)
+Pixel::Pixel(const Position position, const wchar_t character, const RGB textColor, const RGB backgroundColor,
+             const attr_t attributes)
+{
+   m_position        = position;
+   m_character       = character;
+   m_textColor       = textColor;
+   m_backgroundColor = backgroundColor;
+   m_attributes      = attributes;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+void Pixel::setCharacter(const wchar_t character)
 {
    m_character = character;
 };
@@ -57,7 +71,7 @@ const Position& Pixel::getPosition() const
 };
 
 // public ----------------------------------------------------------------------------------------------------
-const char& Pixel::getCharacter() const
+const wchar_t& Pixel::getCharacter() const
 {
    return m_character;
 };
@@ -92,4 +106,16 @@ const RGB& Pixel::getTextColor() const
 const RGB& Pixel::getBackgroundColor() const
 {
    return m_backgroundColor;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+const attr_t& Pixel::getAttributes() const
+{
+   return m_attributes;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+void Pixel::setAttributes(const attr_t attributes)
+{
+   m_attributes = attributes;
 };

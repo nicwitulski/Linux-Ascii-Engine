@@ -43,6 +43,22 @@ void GameEngine::run()
          userInput = ch;
          if (userInput == '`')
             engineRunning = false;
+         
+         // For mouse events, always process through InputHandler AND state
+         if (userInput == KEY_MOUSE)
+         {
+            globalInputHandler.processInput(userInput);
+            // State will also process mouse events in its update()
+         }
+         else
+         {
+            // For non-mouse events, use exclusive logic
+            if (!globalInputHandler.processInput(userInput))
+            {
+               // If InputHandler didn't handle the input, let the state handle it
+               // This allows states to handle their own specific input logic
+            }
+         }
       }
       // State Update
       currentState->update();

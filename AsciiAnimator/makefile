@@ -2,7 +2,7 @@
 
 CXX := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -I../GameEngine/src
-LDFLAGS := ../GameEngine/bin/libgameengine.a -lncurses
+LDFLAGS := ../GameEngine/bin/libgameengine.a -lform -lmenu -lncursesw
 
 # Directories
 SRC_DIR := src
