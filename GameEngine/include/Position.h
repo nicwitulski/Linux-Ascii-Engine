@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @class Position
 ///
-/// X and Y position class
+/// X and Y position class for 2D coordinate management
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class Position
 {
@@ -27,12 +27,12 @@ public:
    Position();
    Position(const int x, const int y);
    Position operator+(const Position& other) { return Position(m_x + other.getX(), m_y + other.getY()); }
-   Position operator-(const Position& other) { return Position(m_x + other.getX(), m_y - other.getY()); };
-   bool     operator==(const Position& other) { return (m_x == other.getX() && m_y == other.getY()); };
+   Position operator-(const Position& other) { return Position(m_x + other.getX(), m_y - other.getY()); }
+   bool     operator==(const Position& other) { return (m_x == other.getX() && m_y == other.getY()); }
    bool     operator>(const Position& other)
    {
       return (m_y > other.getY() || (m_y == other.getY() && m_x > other.getX()));
-   };
+   }
    bool operator<(const Position& other)
    {
       return (m_y < other.getY() || (m_y == other.getY() && m_x < other.getX()));
@@ -55,22 +55,22 @@ public:
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn setX
    ///
-   /// @param x - integer x axis position
+   /// @param x - Integer x axis position
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    void setX(const int x);
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn setY
    ///
-   /// @param y - integer y axis position
+   /// @param y - Integer y axis position
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    void setY(const int y);
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn setPosition
    ///
-   /// @param x - integer x axis position
-   /// @param y - integer y axis position
+   /// @param x - Integer x axis position
+   /// @param y - Integer y axis position
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    void setPosition(const int x, const int y);
 };

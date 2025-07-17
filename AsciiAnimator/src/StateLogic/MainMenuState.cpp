@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @file MainMenuState.h
+/// @file MainMenuState.cpp
 /// @author Nicholas Witulski (nicwitulski@gmail.com)
-/// @brief Main menu. Loads animation project or create new project
+/// @brief Implementation of MainMenuState for animation project management
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -17,38 +17,52 @@
 // public ----------------------------------------------------------------------------------------------------
 void MainMenuState::onEnter()
 {
-   mainMenu = PrintableFactory::loadUIElement("mainMenuSprite", true, false);
+   // Create window with auto-resize enabled from the start
+   mainMenuWindow = std::make_shared<NcursesWindow>(120, 15, 1, false, 0, 0);
+   ncursesWindows.push_back(mainMenuWindow);
+
+   mainMenu = PrintableFactory::loadUIElement("mainMenuSprite", true, false, mainMenuWindow);
    mainMenu->setAllAnimationSpriteLayers(0);
    mainMenu->setDynamicPosition(ScreenLockPosition::TOP_MIDDLE);
 
-   newAnimationButton = PrintableFactory::newButton("New Animation", &MainMenuState::newAnimationFunction, this);
+   newAnimationButton = PrintableFactory::newButton("New Animation", &MainMenuState::newAnimationFunction,
+                                                    this, mainMenuWindow);
    newAnimationButton->setAllAnimationSpriteLayers(1);
-   newAnimationButton->setDynamicPosition(ScreenLockPosition::CENTER);
+   newAnimationButton->setDynamicPosition(ScreenLockPosition::BOTTOM_MIDDLE);
 
-   loadAnimationButton = PrintableFactory::newButton("Load Animation", &MainMenuState::loadAnimationFunction, this);
+   loadAnimationButton = PrintableFactory::newButton("Load Animation", &MainMenuState::loadAnimationFunction,
+                                                     this, mainMenuWindow);
    loadAnimationButton->setAllAnimationSpriteLayers(1);
-   loadAnimationButton->setDynamicPosition(ScreenLockPosition::CENTER);
+   loadAnimationButton->setDynamicPosition(ScreenLockPosition::BOTTOM_MIDDLE);
 
-   quitButton = PrintableFactory::newButton("Quit", &MainMenuState::quitFunction, this);
+   quitButton = PrintableFactory::newButton("Quit", &MainMenuState::quitFunction, this, mainMenuWindow);
    quitButton->setAllAnimationSpriteLayers(1);
-   quitButton->setDynamicPosition(ScreenLockPosition::CENTER);
+   quitButton->setDynamicPosition(ScreenLockPosition::BOTTOM_MIDDLE);
 
    currentCamera = std::make_shared<Camera>(SCREEN_LENGTH, SCREEN_HEIGHT);
    playerEntity  = nullptr;
-};
+
+   UIElement::updateAllLockedPositions();
+}
 
 // public ----------------------------------------------------------------------------------------------------
 void MainMenuState::update()
 {
-   // No mouse handling needed here - it's handled automatically by the global InputHandler
-   // The buttons will execute their functions automatically when clicked
+   // Mouse handling is managed automatically by the global InputHandler
+   // Button interactions are processed automatically when clicked
 }
 
 // public ----------------------------------------------------------------------------------------------------
 void MainMenuState::onExit()
 {
    clear();
-   allPrintables.clear();
+   ncursesWindows.at(0)->clearPrintables();
+   if (mainMenuWindow)
+   {
+      mainMenuWindow->clearPrintables();
+      Display::removeWindow(mainMenuWindow);
+      mainMenuWindow = nullptr;
+   }
    globalInputHandler.clear();
 }
 

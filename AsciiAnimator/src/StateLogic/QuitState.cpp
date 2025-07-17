@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @file QuitState.h
+/// @file QuitState.cpp
 /// @author Nicholas Witulski (nicwitulski@gmail.com)
-/// @brief Quits the application and game engine
+/// @brief Implementation of QuitState for application termination
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -22,7 +22,13 @@ void QuitState::onEnter()
 }
 
 // public ----------------------------------------------------------------------------------------------------
-void QuitState::update() {}
+void QuitState::update() 
+{
+   // No update logic needed for quit state
+}
 
 // public ----------------------------------------------------------------------------------------------------
-void QuitState::onExit() {}
+void QuitState::onExit() 
+{
+   // No cleanup needed for quit state
+}

@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @file Printable.h
+/// @file Printable.cpp
 /// @author Nicholas Witulski (nicwitulski@gmail.com)
-/// @brief Gives an object that is meant to be printed to an ncurses display attribues that allow it to be
+/// @brief Implementation of Printable class for objects that can be printed to ncurses display
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -19,6 +19,7 @@ Printable::Printable()
    m_animations.push_back(Animation());
    m_visable       = false;
    m_printableName = "default";
+   m_ncurseWindow  = nullptr;
 };
 
 // public ----------------------------------------------------------------------------------------------------
@@ -170,3 +171,15 @@ const std::string& Printable::getPrintableName() const
 {
    return m_printableName;
 };
+
+// public ----------------------------------------------------------------------------------------------------
+WINDOW* Printable::getNcurseWindow() const
+{
+   return m_ncurseWindow;
+}
+
+// public ----------------------------------------------------------------------------------------------------
+void Printable::setNcurseWindow(WINDOW* window)
+{
+   m_ncurseWindow = window;
+}

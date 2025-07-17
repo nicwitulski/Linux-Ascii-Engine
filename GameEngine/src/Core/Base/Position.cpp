@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file Position.cpp
 /// @author Nicholas Witulski (nicwitulski@gmail.com)
-/// @brief Denotes a 2D position on a terminal
+/// @brief Implementation of Position class for 2D coordinate management
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -16,42 +16,42 @@ Position::Position()
 {
    m_x = 0;
    m_y = 0;
-};
+}
 
 // public ----------------------------------------------------------------------------------------------------
 Position::Position(const int x, const int y)
 {
    m_x = x;
    m_y = y;
-};
+}
 
 // public ----------------------------------------------------------------------------------------------------
 const int& Position::getX() const
 {
    return m_x;
-};
+}
 
 // public ----------------------------------------------------------------------------------------------------
 const int& Position::getY() const
 {
    return m_y;
-};
+}
 
 // public ----------------------------------------------------------------------------------------------------
 void Position::setX(const int x)
 {
    m_x = x;
-};
+}
 
 // public ----------------------------------------------------------------------------------------------------
 void Position::setY(const int y)
 {
    m_y = y;
-};
+}
 
 // public ----------------------------------------------------------------------------------------------------
 void Position::setPosition(const int x, const int y)
 {
    m_x = x;
    m_y = y;
-};
+}

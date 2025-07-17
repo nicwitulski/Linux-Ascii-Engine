@@ -11,20 +11,21 @@
 
 #ifndef PARAMETERS_H
 #define PARAMETERS_H
-
-#pragma once
 #include "Camera.h"
 #include "Entity.h"
+#include "NcursesWindow.h"
 #include "UIElement.h"
+#include <panel.h>
 #include <memory>
 #include <vector>
 
 // Forward declaration
 class InputHandler;
 
-extern std::vector<std::shared_ptr<Printable>> printablesToSave;
-extern std::vector<std::shared_ptr<Printable>> allPrintables;
-extern bool                                    printablesNeedSorted;
+extern std::vector<std::shared_ptr<Printable>>     printablesToSave;
+extern std::vector<std::shared_ptr<NcursesWindow>> ncursesWindows;
+//extern std::vector<std::shared_ptr<Printable>>     allPrintables;
+extern bool printablesNeedSorted;
 
 extern std::shared_ptr<Camera> currentCamera;
 extern std::shared_ptr<Entity> playerEntity;

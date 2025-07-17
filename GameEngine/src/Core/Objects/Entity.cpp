@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @file Entity.h
-/// @author Nicholas Witulski
-/// @brief Game object that has a name
+/// @file Entity.cpp
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Implementation of Entity class for game object management
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -17,9 +17,9 @@ Entity::Entity()
    m_printableName        = "none";
    m_currentAnimationName = "default";
    m_animations.push_back(Animation());
-   m_visable                 = false;
-   m_moveableByCamera        = true;
-   Sprite m_spriteBeforeMove = Sprite();
+   m_visable          = false;
+   m_moveableByCamera = true;
+   m_ncurseWindow     = nullptr;
 };
 
 // public ----------------------------------------------------------------------------------------------------
@@ -41,9 +41,9 @@ Entity::Entity(const std::string entityName, const std::vector<Animation> animat
 
    m_currentAnimationName = animations.at(0).getAnimationName(); // Default is first loaded animation,
                                                                  // change manually
-   m_visable                 = visable;
-   m_moveableByCamera        = moveableByCamera;
-   Sprite m_spriteBeforeMove = Sprite();
+   m_visable          = visable;
+   m_moveableByCamera = moveableByCamera;
+   m_ncurseWindow     = nullptr;
 };
 
 // public ----------------------------------------------------------------------------------------------------

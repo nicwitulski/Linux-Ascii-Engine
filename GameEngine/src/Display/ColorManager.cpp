@@ -1,8 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file ColorManager.cpp
-/// @author Nicholas Witulski (nicwitulski@gmail)
-/// @brief ColorManager handles color pairs and RGB management for ncurses.
-/// Completely vibe coded, but it works.
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Implementation of ColorManager for color pair and RGB management in ncurses
 /// @version 0.1
 /// @date 2025-07-02
 ///
@@ -14,6 +13,7 @@
 #include <ncurses.h>
 #include <cmath>
 
+// Initialize static members
 std::map<ColorManager::ColorKey, int> ColorManager::colorPairMap;
 int                                   ColorManager::nextPair = 1; // 0 is default
 

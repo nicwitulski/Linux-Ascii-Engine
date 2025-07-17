@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file Sprite.cpp
-/// @author Nicholas Witulski
-/// @brief Holds a vector of Pixels to form a sprite
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Implementation of Sprite class for pixel collection and positioning
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -59,6 +59,42 @@ void Sprite::addPixel(const Pixel pixel)
 const std::vector<Pixel>& Sprite::getPixels() const
 {
    return m_pixels;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+std::vector<Pixel>& Sprite::getPixelsMutable()
+{
+   return m_pixels;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+Pixel Sprite::getPixelCopyAtPosition(Position position)
+{
+   for (Pixel pixel : m_pixels)
+   {
+      int pixelX = pixel.getPosition().getX();
+      int pixelY = pixel.getPosition().getY();
+      if (pixelX == position.getX() && pixelY == position.getY())
+      {
+         return pixel;
+      }
+   }
+   return Pixel(position, '\0');
+}
+
+// public ----------------------------------------------------------------------------------------------------
+Pixel& Sprite::getPixelMutableAtPosition(Position position)
+{
+   for (Pixel& pixel : m_pixels)
+   {
+      int pixelX = pixel.getPosition().getX();
+      int pixelY = pixel.getPosition().getY();
+      if (pixelX == position.getX() && pixelY == position.getY())
+      {
+         return pixel;
+      }
+   }
+   return m_pixels.at(0); // Return first pixel if no pixel found at position
 };
 
 // public ----------------------------------------------------------------------------------------------------

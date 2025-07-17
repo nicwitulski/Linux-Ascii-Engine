@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @file FileLoading.h
+/// @file PrintableFactory.h
 /// @author Nicholas Witulski (nicwitulski@gmail.com)
-/// @brief File used to load objects from .txt files
+/// @brief Factory class for loading and creating printable objects from files
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -14,9 +14,9 @@
 
 #include "Button.h"
 #include "Entity.h"
+#include "InputHandler.h"
 #include "Parameters.h"
 #include "Printable.h"
-#include "InputHandler.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -26,7 +26,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @class PrintableFactory
 ///
-/// File used to load objects from .txt files
+/// Factory class for loading and creating printable objects from files
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class PrintableFactory
 {
@@ -40,16 +40,19 @@ public:
    /// Next N lines: text RGB values (r,g,b per pixel, comma-separated, space between pixels)
    /// Next N lines: background RGB values (r,g,b per pixel, comma-separated, space between pixels)
    /// Next N lines: attribute values (integer per pixel, space between pixels)
+   ///
+   /// @param fileLocation - Path to the text file to load
+   /// @return Frame loaded from the text file
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    static Frame getFrameFromTextFile(const std::string fileLocation);
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn loadAnimation
    ///
-   /// @return loaded Animation from inputed entityName/animationName
    /// @param entityName - Name of directory where all animations associated with this entity is stored
    /// @param animationName - Name of animation directory within entity directory
    /// @param repeats - Stops animation at the end of cycle or not
+   /// @return Loaded Animation from inputed entityName/animationName
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    static Animation loadAnimation(const std::string entityName, const std::string animationName,
                                   const bool repeats);
@@ -59,44 +62,43 @@ public:
    ///
    /// When loaded, gets stored into allPrintables global variable for display refreshing
    ///
-   /// @return loaded Entity from inputed entityName
-   /// @param entityName - Name of directory where all animations associated with this entity is stored
-   /// @param visable
-   /// @param layer
-   /// @param movemableByCamera
+   /// @param directoryLocation - Name of directory where all animations associated with this entity is stored
+   /// @param visable - Visibility flag
+   /// @param moveableByCamera - Whether the entity moves with camera
+   /// @return Loaded Entity from inputed entityName
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    static std::shared_ptr<Entity> loadEntity(const std::string directoryLocation, const bool visable,
-                                             const bool moveableByCamera);
+                                             const bool                     moveableByCamera,
+                                             std::shared_ptr<NcursesWindow> ncursesWindow = nullptr);
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn loadUIElement
    ///
    /// When loaded, gets stored into allPrintables global variable for display refreshing
    ///
-   /// @return UIElement loaded from inputed directory name. Similar to entityName but doesn't actually get
-   /// assigned to the object
-   /// @param directoryName
-   /// @param visable
-   /// @param layer
-   /// @param moveableByCamera
+   /// @param directoryName - Directory name to load from
+   /// @param visable - Visibility flag
+   /// @param moveableByCamera - Whether the UI element moves with camera
+   /// @return UIElement loaded from inputed directory name
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    static std::shared_ptr<UIElement> loadUIElement(const std::string directoryName, const bool visable,
-                                                   const bool moveableByCamera);
+                                                   const bool                     moveableByCamera,
+                                                   std::shared_ptr<NcursesWindow> ncursesWindow = nullptr);
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn loadButton
    ///
    /// When loaded, gets stored into allPrintables global variable for display refreshing
    ///
-   /// @return a Button object loaded from inputed directory name
-   /// @param directoryName
-   /// @param visable
-   /// @param layer
-   /// @param moveableByCamera
-   /// @param function - The function that'll be assigned to the button when thisButton.executeFuntion()
+   /// @param directoryName - Directory name to load from
+   /// @param visable - Visibility flag
+   /// @param moveableByCamera - Whether the button moves with camera
+   /// @param function - The function that'll be assigned to the button when thisButton.executeFunction()
+   /// @return A Button object loaded from inputed directory name
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    static std::shared_ptr<Button> loadButton(const std::string directoryName, const bool visable,
-                                             const bool moveableByCamera, std::function<void()> function);
+                                             const bool moveableByCamera, std::function<void()> function,
+                                             std::shared_ptr<NcursesWindow> ncursesWindow = nullptr);
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn writePrintableToTextFiles
@@ -113,16 +115,21 @@ public:
    /// Next N lines: background RGB values (r,g,b per pixel, comma-separated, space between pixels)
    /// Next N lines: attribute values (integer per pixel, space between pixels)
    ///
-   /// @param printable - the Printable object to write
+   /// @param printable - The Printable object to write
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    static void writePrintableToTextFiles(const std::shared_ptr<Printable>& printable);
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-   /// @fn writePrintableToTextFiles
+   /// @fn newButton
    ///
-   /// Creates a button using the default sprite, visability = true, and moveableByCamera = false.
+   /// Creates a button using the default sprite, visibility = true, and moveableByCamera = false.
+   ///
+   /// @param text - The text to display on the button
+   /// @param function - The function to execute when the button is clicked
+   /// @return A new Button object
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-   static std::shared_ptr<Button> newButton(std::string text,std::function<void()> function);
+   static std::shared_ptr<Button> newButton(std::string text, std::function<void()> function,
+                                            std::shared_ptr<NcursesWindow> ncursesWindow = nullptr);
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn newButton (template overload)
@@ -134,12 +141,48 @@ public:
    /// @param text - The text to display on the button
    /// @param memberFunc - Pointer to the member function to call
    /// @param instance - Pointer to the class instance
+   /// @return A new Button object
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    template<typename T>
-   static std::shared_ptr<Button> newButton(std::string text, void (T::*memberFunc)(), T* instance)
+   static std::shared_ptr<Button> newButton(std::string text, void (T::*memberFunc)(), T* instance,
+                                            std::shared_ptr<NcursesWindow> ncursesWindow = nullptr)
    {
-      return newButton(text, [instance, memberFunc]() { (instance->*memberFunc)(); });
+      return newButton(text, [instance, memberFunc]() { (instance->*memberFunc)(); }, ncursesWindow);
    }
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn createButtonGroup
+   ///
+   /// Creates multiple buttons with the same positioning and automatically sets their positions
+   /// @param buttonData - Vector of pairs containing button text and function
+   /// @param position - Screen position for the button group
+   /// @param direction - Stacking direction for the buttons
+   /// @param ncursesWindow - Window to add buttons to
+   /// @return Vector of created buttons
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   static std::vector<std::shared_ptr<Button>>
+   createButtonGroup(const std::vector<std::pair<std::string, std::function<void()>>>& buttonData,
+                     ScreenLockPosition             position      = ScreenLockPosition::CENTER,
+                     StackDirection                 direction     = StackDirection::VERTICAL,
+                     std::shared_ptr<NcursesWindow> ncursesWindow = nullptr);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn createSliderWithButton
+   ///
+   /// Creates a slider with an associated button for display/interaction
+   /// @param sliderLength - Length of the slider
+   /// @param buttonText - Text for the associated button
+   /// @param buttonFunc - Function to call when button is clicked
+   /// @param position - Screen position for the slider and button
+   /// @param direction - Stacking direction for slider and button
+   /// @param ncursesWindow - Window to add elements to
+   /// @return Pair of button and slider
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   static std::pair<std::shared_ptr<Button>, std::shared_ptr<Slider>>
+   createSliderWithButton(int sliderLength, std::string buttonText, std::function<void()> buttonFunc,
+                          ScreenLockPosition             position      = ScreenLockPosition::CENTER,
+                          StackDirection                 direction     = StackDirection::VERTICAL,
+                          std::shared_ptr<NcursesWindow> ncursesWindow = nullptr);
 };
 
 #endif

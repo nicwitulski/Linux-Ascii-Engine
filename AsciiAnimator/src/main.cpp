@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file main.cpp
 /// @author Nicholas Witulski (nicwitulski@gmail.com)
-/// @brief the application main that uses the gameEngine
+/// @brief Main application entry point that initializes and runs the GameEngine
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -11,6 +11,7 @@
 
 #include "StateLogic/MainMenuState.h"
 
+// public ----------------------------------------------------------------------------------------------------
 int main()
 {
    GameEngine engine(new MainMenuState());

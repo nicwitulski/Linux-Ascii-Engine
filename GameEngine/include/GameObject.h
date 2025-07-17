@@ -1,8 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file GameObject.h
-/// @author Nicholas Witulski
-/// @brief Way to denote attributes (not the ncurses kind haha) for all gameObjects.
-/// Any object should inherit this class.
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Base class for all game objects with common attributes and functionality
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -18,8 +17,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @class GameObject
 ///
-/// Way to denote attributes (not the ncurses kind haha) for all gameObjects.
-/// Any object should inherit this class.
+/// Base class for all game objects with common attributes and functionality.
+/// Any game object should inherit from this class.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class GameObject : public Printable
 {

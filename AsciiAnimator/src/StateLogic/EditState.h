@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file EditState.h
-/// @author (your name)
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
 /// @brief Animation editor state for AsciiAnimator
 /// @version 0.1
 /// @date 2025-07-02
@@ -25,7 +25,6 @@ class EditState : public GameState
 private:
     std::string printableName;
     std::string animationName;
-    // TODO: Add members for animation, frame, cursor, colors, etc.
 
 public:
     EditState(const std::string& printable, const std::string& animation);

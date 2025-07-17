@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @file Parameters.h
+/// @file Parameters.cpp
 /// @author Nicholas Witulski (nicwitulski@gmail.com)
-/// @brief File for all global variables
+/// @brief Implementation of global parameters and variables
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -12,9 +12,10 @@
 #include "../../include/Parameters.h"
 #include "../../include/InputHandler.h"
 
-std::vector<std::shared_ptr<Printable>> printablesToSave;
-std::vector<std::shared_ptr<Printable>> allPrintables;
-bool                                    printablesNeedSorted = true;
+std::vector<std::shared_ptr<Printable>>     printablesToSave;
+std::vector<std::shared_ptr<NcursesWindow>> ncursesWindows;
+//std::vector<std::shared_ptr<Printable>>     allPrintables;
+bool printablesNeedSorted = true;
 
 std::shared_ptr<Camera> currentCamera;
 

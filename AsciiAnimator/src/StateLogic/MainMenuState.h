@@ -23,11 +23,12 @@
 class MainMenuState : public GameState
 {
 private:
-   std::shared_ptr<UIElement> mainMenu;
-   std::shared_ptr<Button>    newAnimationButton;
-   std::shared_ptr<Button>    loadAnimationButton;
-   std::shared_ptr<Button>    quitButton;
-   std::shared_ptr<Entity>    colorAttTest;
+   std::shared_ptr<UIElement>     mainMenu;
+   std::shared_ptr<Button>        newAnimationButton;
+   std::shared_ptr<Button>        loadAnimationButton;
+   std::shared_ptr<Button>        quitButton;
+   std::shared_ptr<Entity>        colorAttTest;
+   std::shared_ptr<NcursesWindow> mainMenuWindow;
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn newAnimationFunction

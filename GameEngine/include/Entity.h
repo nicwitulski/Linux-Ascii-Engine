@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file Entity.h
-/// @author Nicholas Witulski
-/// @brief Game object that has a name
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Game object that has a name and position bounds checking
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -18,7 +18,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @class Entity
 ///
-/// Game object that has a name
+/// Game object that has a name and provides position bounds checking functionality
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class Entity : public GameObject
 {
@@ -32,8 +32,8 @@ public:
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn positionInBoundsOfEntity
    ///
-   /// @param position - position to check if its in the bounds of the entity
-   /// @return boolean of if the given position is in the current animation
+   /// @param position - Position to check if it's in the bounds of the entity
+   /// @return Boolean indicating if the given position is in the current animation
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    bool positionInBoundsOfEntity(const Position position);
 };

@@ -14,9 +14,12 @@
 
 #include "Button.h"
 #include "Slider.h"
+#include <functional>
 #include <memory>
 #include <vector>
-#include <functional>
+
+// Forward declarations
+class NcursesWindow;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @class InputHandler
@@ -27,10 +30,13 @@
 class InputHandler
 {
 private:
-   MEVENT event;
-   bool sliderDragging = false;
-   std::shared_ptr<Slider> draggedSlider; // Track which slider is being dragged
-   bool mouseEventProcessed = false; // Track if we processed a mouse event this frame
+   MEVENT                         event;
+   bool                           sliderDragging = false;
+   std::shared_ptr<Slider>        draggedSlider; // Track which slider is being dragged
+   bool                           windowDragging = false;
+   std::shared_ptr<NcursesWindow> draggedWindow; // Track which window is being dragged
+   Position                       dragOffset;    // Offset from mouse position to window position
+   bool mouseEventProcessed = false;             // Track if we processed a mouse event this frame
 
    // UI Elements
    std::vector<std::shared_ptr<Button>> buttons;
@@ -60,6 +66,30 @@ private:
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    void handleMouseDrag(Position mousePosition);
 
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn handleWindowPress
+   ///
+   /// Handles mouse press events for window dragging
+   /// @param mousePosition - the current mouse position
+   /// @return true if a window was clicked for dragging, false otherwise
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   bool handleWindowPress(Position mousePosition);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn handleWindowRelease
+   ///
+   /// Handles mouse release events for window dragging
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void handleWindowRelease();
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn handleWindowDrag
+   ///
+   /// Handles mouse drag events for window dragging
+   /// @param mousePosition - the current mouse position
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void handleWindowDrag(Position mousePosition);
+
 public:
    InputHandler();
 
@@ -78,6 +108,22 @@ public:
    /// @param slider - the slider to add
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    void addSlider(std::shared_ptr<Slider> slider);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn removeButton
+   ///
+   /// Removes a button from the input handler
+   /// @param button - the button to remove
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void removeButton(std::shared_ptr<Button> button);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn removeSlider
+   ///
+   /// Removes a slider from the input handler
+   /// @param slider - the slider to remove
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void removeSlider(std::shared_ptr<Slider> slider);
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn processInput
@@ -115,4 +161,4 @@ public:
    bool wasMouseEventProcessed();
 };
 
-#endif 
+#endif

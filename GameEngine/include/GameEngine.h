@@ -23,6 +23,7 @@
 #include "Position.h"
 #include "Printable.h"
 #include "PrintableFactory.h"
+#include "RGB.h"
 #include "Slider.h"
 #include "Sprite.h"
 #include "UIElement.h"
@@ -41,7 +42,12 @@ private:
    void exit();
 
 public:
-   GameEngine(GameState* initialState) : currentState(initialState) { currentState->onEnter(); }
+   GameEngine(GameState* initialState) : currentState(initialState)
+   {
+      Display::initCurse();
+      engineRunning = true;
+      currentState->onEnter();
+   }
 
    void run();
 };

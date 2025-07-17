@@ -1,9 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @file Camera.h
-/// @author Nicholas Witulski
-/// @brief Defines a camera which is a rectangle in the ncurses display. Has an offset which gets used to
-/// print camera-movable objects at their world coordinates + the camera offset to give the illusion of
-/// moving in the world.
+/// @file Camera.cpp
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Implementation of Camera class for viewport management and offset tracking
 /// @version 0.1
 /// @date 2025-06-27
 ///

@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @file Animation.h
-/// @author Nicholas Witulski (nicwitulski@gmail.con)
-/// @brief Defines an Animation which holds a vector of frames and advances through them
+/// @file Animation.cpp
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Implementation of Animation class for frame management and timing
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -78,13 +78,16 @@ void Animation::manuallyIncrementFrame()
 void Animation::manuallyDecrementFrame()
 {
    previousFrameIndex = currentFrameIndex;
-   currentFrameIndex--;
-   if (currentFrameIndex >= m_frames.size())
+   if (currentFrameIndex == 0)
    {
       if (m_repeats)
-         currentFrameIndex = 0;
+         currentFrameIndex = m_frames.size() - 1;
       else
-         currentFrameIndex = m_frames.size() - 1; // Stop at last frame
+         currentFrameIndex = 0; // Stop at first frame
+   }
+   else
+   {
+      --currentFrameIndex;
    }
 };
 
@@ -152,4 +155,66 @@ void Animation::setAllSpriteLayers(const int layer)
    {
       frame.getMutableSprite().setLayer(layer);
    }
+};
+
+// public ----------------------------------------------------------------------------------------------------
+size_t Animation::getCurrentFrameIndex() const
+{
+   return currentFrameIndex;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+size_t Animation::getTotalFrames() const
+{
+   return m_frames.size();
+};
+
+// public ----------------------------------------------------------------------------------------------------
+void Animation::addFrame(const Frame& frame)
+{
+   m_frames.push_back(frame);
+};
+
+// public ----------------------------------------------------------------------------------------------------
+bool Animation::hasNextFrame() const
+{
+   return currentFrameIndex < m_frames.size() - 1;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+bool Animation::hasPreviousFrame() const
+{
+   return currentFrameIndex > 0;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+const Frame& Animation::getFrameAtIndex(size_t index) const
+{
+   if (index >= m_frames.size())
+   {
+      return m_frames[0];
+   }
+   return m_frames[index];
+};
+
+// public ----------------------------------------------------------------------------------------------------
+Frame& Animation::getFrameAtIndexMutable(size_t index)
+{
+   if (index >= m_frames.size())
+   {
+      return m_frames[0];
+   }
+   return m_frames[index];
+};
+
+// public ----------------------------------------------------------------------------------------------------
+void Animation::setRepeats(const bool repeats)
+{
+   m_repeats = repeats;
+};
+
+// public ----------------------------------------------------------------------------------------------------
+const bool& Animation::getRepeats() const
+{
+   return m_repeats;
 };

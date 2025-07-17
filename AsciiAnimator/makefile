@@ -2,7 +2,7 @@
 
 CXX := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -I../GameEngine/src
-LDFLAGS := ../GameEngine/bin/libgameengine.a -lform -lmenu -lncursesw
+LDFLAGS := ../GameEngine/bin/libgameengine.a -lncursesw
 
 # Directories
 SRC_DIR := src
@@ -61,3 +61,14 @@ rebuild:
 run: all
 	@echo "Running the application..."
 	@./$(TARGET)
+
+.PHONY: compile_commands
+compile_commands:
+	@echo "Generating compile_commands.json..."
+	@echo "[" > compile_commands.json
+	@echo "  {" >> compile_commands.json
+	@echo "    \"directory\": \"$(shell pwd)\"," >> compile_commands.json
+	@echo "    \"command\": \"$(CXX) $(CXXFLAGS) -c $(SRC_FILES)\"," >> compile_commands.json
+	@echo "    \"file\": \"$(SRC_FILES)\"" >> compile_commands.json
+	@echo "  }" >> compile_commands.json
+	@echo "]" >> compile_commands.json

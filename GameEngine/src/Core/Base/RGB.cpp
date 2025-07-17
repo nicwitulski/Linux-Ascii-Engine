@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file RGB.cpp
 /// @author Nicholas Witulski (nicwitulski@gmail.com)
-/// @brief Denotes red, green, and blue values that can be used to print character on an ncurses window
+/// @brief Implementation of RGB class for color value management
 /// @version 0.1
 /// @date 2025-06-27
 ///

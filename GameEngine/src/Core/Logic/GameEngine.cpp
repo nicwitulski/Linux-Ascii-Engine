@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @file GameEngine.h
+/// @file GameEngine.cpp
 /// @author Nicholas Witulski (nicwitulski@gmail.com)
-/// @brief Highest level file, holds all needed includes. Create an instance of this object and call .run()
+/// @brief Implementation of GameEngine class for main game loop and state management
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -25,9 +25,6 @@ void GameEngine::run()
    userInput     = 0;
    auto lastTime = Clock::now();
 
-   Display::initCurse();
-   engineRunning = true;
-
    while (engineRunning)
    {
       // --- Time Tracking ---
@@ -43,7 +40,7 @@ void GameEngine::run()
          userInput = ch;
          if (userInput == '`')
             engineRunning = false;
-         
+
          // For mouse events, always process through InputHandler AND state
          if (userInput == KEY_MOUSE)
          {

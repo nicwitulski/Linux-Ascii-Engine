@@ -1,8 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @file GameObject.h
-/// @author Nicholas Witulski
-/// @brief Way to denote attributes (not the ncurses kind haha) for all gameObjects.
-/// Any object should inherit this class.
+/// @file GameObject.cpp
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief Implementation of GameObject class for base game object functionality
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -20,6 +19,7 @@ GameObject::GameObject()
    m_currentAnimationName = "default";
    m_animations.push_back(Animation());
    m_printableName = "default";
+   m_ncurseWindow  = nullptr;
 };
 
 // public ----------------------------------------------------------------------------------------------------
@@ -31,4 +31,5 @@ GameObject::GameObject(const std::string printableName, bool visable, bool movea
    m_moveableByCamera     = moveableByCamera;
    m_animations           = animations;
    m_currentAnimationName = currentAnimation;
+   m_ncurseWindow         = nullptr;
 };

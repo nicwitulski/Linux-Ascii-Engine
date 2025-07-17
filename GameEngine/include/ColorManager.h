@@ -1,8 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @file ColorManager.h
-/// @author Nicholas Witulski (nicwitulski@gmail)
-/// @brief ColorManager handles color pairs and RGB management for ncurses.
-/// Completely vibe coded, but it works.
+/// @author Nicholas Witulski (nicwitulski@gmail.com)
+/// @brief ColorManager handles color pairs and RGB management for ncurses
 /// @version 0.1
 /// @date 2025-07-02
 ///
@@ -10,7 +9,9 @@
 ///
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#ifndef COLORMANAGER_H
+#define COLORMANAGER_H
+
 #include "RGB.h"
 #include <ncurses.h>
 #include <map>
@@ -20,7 +21,7 @@
 /// @class ColorManager
 ///
 /// ColorManager handles color pairs and RGB management for ncurses.
-/// Completely vibe coded, but it works.
+/// Provides color pair allocation and management for ncurses display.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class ColorManager
 {
@@ -30,8 +31,8 @@ public:
    ///
    /// Returns the color pair index for the given fg/bg. Allocates if needed.
    ///
-   /// @param fg Foreground RGB color
-   /// @param bg Background RGB color
+   /// @param fg - Foreground RGB color
+   /// @param bg - Background RGB color
    /// @return Color pair index (0-255)
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    static int getColorPair(const RGB& fg, const RGB& bg);
@@ -39,8 +40,8 @@ public:
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn initialize
    ///
-   // Initializes color pairs (call after start_color())
-   //////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// Initializes color pairs (call after start_color())
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    static void initialize();
 
 private:
@@ -54,12 +55,12 @@ private:
    ///
    /// Registers a color with the given RGB values and returns the color ID.
    ///
-   /// @param r Red component (0-1000)
-   /// @param g Green component (0-1000)
-   /// @param b Blue component (0-1000)
-   /// @param colorId Color ID to register (16+ for custom colors)
+   /// @param r - Red component (0-1000)
+   /// @param g - Green component (0-1000)
+   /// @param b - Blue component (0-1000)
+   /// @param colorId - Color ID to register (16+ for custom colors)
    /// @return Registered color ID
-   //////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    static short registerColor(short r, short g, short b, short colorId);
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,10 +68,10 @@ private:
    ///
    /// Finds or registers a color based on RGB values.
    ///
-   /// @param rgb RGB color to find or register
-   /// @param colorIdOut Output parameter for the found or registered color ID
+   /// @param rgb - RGB color to find or register
+   /// @param colorIdOut - Output parameter for the found or registered color ID
    /// @return Registered color ID
-   //////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    static short findOrRegisterColor(const RGB& rgb, short& colorIdOut);
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -78,9 +79,11 @@ private:
    ///
    /// Creates a key for the color pair map based on foreground and background RGB values.
    ///
-   /// @param fg Foreground RGB color
-   /// @param bg Background RGB color
+   /// @param fg - Foreground RGB color
+   /// @param bg - Background RGB color
    /// @return ColorKey tuple for the color pair
-   //////////////////////////////////////////////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    static ColorKey makeKey(const RGB& fg, const RGB& bg);
 };
+
+#endif

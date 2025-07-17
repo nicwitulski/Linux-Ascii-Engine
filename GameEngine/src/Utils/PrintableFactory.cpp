@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @file FileLoading.h
+/// @file PrintableFactory.cpp
 /// @author Nicholas Witulski (nicwitulski@gmail.com)
-/// @brief File used to load objects from .txt files
+/// @brief Implementation of PrintableFactory for loading and creating printable objects from files
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -11,14 +11,16 @@
 
 #include "../../include/PrintableFactory.h"
 #include <algorithm>
+#include <codecvt>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <locale>
 #include <memory>
 #include <sstream> // for stringstream
 #include <string>
-#include <locale>
-#include <codecvt>
+
+namespace fs = std::filesystem;
 
 // public static ---------------------------------------------------------------------------------------------
 Frame PrintableFactory::getFrameFromTextFile(const std::string fileLocation)
@@ -52,93 +54,94 @@ Frame PrintableFactory::getFrameFromTextFile(const std::string fileLocation)
       layer = std::stoi(value);
    }
 
-   // Read ASCII art lines until delimiter '---'
+   // Read ASCII art lines until delimiter '---' or end of file
    std::vector<std::string> asciiLines;
+   bool                     foundDelimiter = false;
    while (getline(inputFile, line))
    {
       if (line == "---")
+      {
+         foundDelimiter = true;
          break;
+      }
       asciiLines.push_back(line);
    }
+
    int height = asciiLines.size();
    int width  = 0;
    for (const auto& l : asciiLines)
       if ((int)l.size() > width)
          width = l.size();
 
-   // If the delimiter was not found, skip lines until found (robustness)
-   if (line != "---")
-   {
-      while (getline(inputFile, line))
-      {
-         if (line == "---")
-            break;
-      }
-   }
-
-   // Read text RGB lines
-   std::vector<std::vector<RGB>> textRGBs(height, std::vector<RGB>(width, RGB(1000, 1000, 1000)));
-   for (int y = 0; y < height; ++y)
-   {
-      if (!getline(inputFile, line))
-         break;
-      std::stringstream ss(line);
-      for (int x = 0; x < width; ++x)
-      {
-         std::string pixelStr;
-         if (!(ss >> pixelStr))
-            break;
-         int    r = 1000, g = 1000, b = 1000;
-         size_t p1 = pixelStr.find(',');
-         size_t p2 = pixelStr.find(',', p1 + 1);
-         if (p1 != std::string::npos && p2 != std::string::npos)
-         {
-            r = std::stoi(pixelStr.substr(0, p1));
-            g = std::stoi(pixelStr.substr(p1 + 1, p2 - p1 - 1));
-            b = std::stoi(pixelStr.substr(p2 + 1));
-         }
-         textRGBs[y][x] = RGB(r, g, b);
-      }
-   }
-
-   // Read background RGB lines
-   std::vector<std::vector<RGB>> bgRGBs(height, std::vector<RGB>(width, RGB(0, 0, 0)));
-   for (int y = 0; y < height; ++y)
-   {
-      if (!getline(inputFile, line))
-         break;
-      std::stringstream ss(line);
-      for (int x = 0; x < width; ++x)
-      {
-         std::string pixelStr;
-         if (!(ss >> pixelStr))
-            break;
-         int    r = 0, g = 0, b = 0;
-         size_t p1 = pixelStr.find(',');
-         size_t p2 = pixelStr.find(',', p1 + 1);
-         if (p1 != std::string::npos && p2 != std::string::npos)
-         {
-            r = std::stoi(pixelStr.substr(0, p1));
-            g = std::stoi(pixelStr.substr(p1 + 1, p2 - p1 - 1));
-            b = std::stoi(pixelStr.substr(p2 + 1));
-         }
-         bgRGBs[y][x] = RGB(r, g, b);
-      }
-   }
-
-   // Read attribute lines
+   // Default color values (white text, black background, normal attributes)
+   std::vector<std::vector<RGB>>    textRGBs(height, std::vector<RGB>(width, RGB(1000, 1000, 1000)));
+   std::vector<std::vector<RGB>>    bgRGBs(height, std::vector<RGB>(width, RGB(0, 0, 0)));
    std::vector<std::vector<attr_t>> attrs(height, std::vector<attr_t>(width, A_NORMAL));
-   for (int y = 0; y < height; ++y)
+
+   // Only read color/attribute data if delimiter was found
+   if (foundDelimiter)
    {
-      if (!getline(inputFile, line))
-         break;
-      std::stringstream ss(line);
-      for (int x = 0; x < width; ++x)
+      // Read text RGB lines
+      for (int y = 0; y < height; ++y)
       {
-         int attr = 0;
-         if (!(ss >> attr))
+         if (!getline(inputFile, line))
             break;
-         attrs[y][x] = static_cast<attr_t>(attr);
+         std::stringstream ss(line);
+         for (int x = 0; x < width; ++x)
+         {
+            std::string pixelStr;
+            if (!(ss >> pixelStr))
+               break;
+            int    r = 1000, g = 1000, b = 1000;
+            size_t p1 = pixelStr.find(',');
+            size_t p2 = pixelStr.find(',', p1 + 1);
+            if (p1 != std::string::npos && p2 != std::string::npos)
+            {
+               r = std::stoi(pixelStr.substr(0, p1));
+               g = std::stoi(pixelStr.substr(p1 + 1, p2 - p1 - 1));
+               b = std::stoi(pixelStr.substr(p2 + 1));
+            }
+            textRGBs[y][x] = RGB(r, g, b);
+         }
+      }
+
+      // Read background RGB lines
+      for (int y = 0; y < height; ++y)
+      {
+         if (!getline(inputFile, line))
+            break;
+         std::stringstream ss(line);
+         for (int x = 0; x < width; ++x)
+         {
+            std::string pixelStr;
+            if (!(ss >> pixelStr))
+               break;
+            int    r = 0, g = 0, b = 0;
+            size_t p1 = pixelStr.find(',');
+            size_t p2 = pixelStr.find(',', p1 + 1);
+            if (p1 != std::string::npos && p2 != std::string::npos)
+            {
+               r = std::stoi(pixelStr.substr(0, p1));
+               g = std::stoi(pixelStr.substr(p1 + 1, p2 - p1 - 1));
+               b = std::stoi(pixelStr.substr(p2 + 1));
+            }
+            bgRGBs[y][x] = RGB(r, g, b);
+         }
+      }
+
+      // Read attribute lines
+      for (int y = 0; y < height; ++y)
+      {
+         if (!getline(inputFile, line))
+            break;
+         std::stringstream ss(line);
+         for (int x = 0; x < width; ++x)
+         {
+            int attr = 0;
+            if (!(ss >> attr))
+               break;
+            attrs[y][x] = static_cast<attr_t>(attr);
+         }
       }
    }
 
@@ -149,10 +152,10 @@ Frame PrintableFactory::getFrameFromTextFile(const std::string fileLocation)
       std::wstring wline = converter.from_bytes(asciiLines[y]);
       for (int x = 0; x < (int)wline.size(); ++x)
       {
-         wchar_t ch = wline[x];
-         RGB    textColor = textRGBs[y][x];
-         RGB    bgColor   = bgRGBs[y][x];
-         attr_t attr      = attrs[y][x];
+         wchar_t ch        = wline[x];
+         RGB     textColor = textRGBs[y][x];
+         RGB     bgColor   = bgRGBs[y][x];
+         attr_t  attr      = attrs[y][x];
          pixels.push_back(Pixel(Position(x, y), ch, textColor, bgColor, attr));
       }
    }
@@ -163,9 +166,9 @@ Frame PrintableFactory::getFrameFromTextFile(const std::string fileLocation)
 }
 
 // public static ---------------------------------------------------------------------------------------------
-namespace fs = std::filesystem;
 Animation PrintableFactory::loadAnimation(std::string entityName, std::string animationName, bool repeats)
 {
+   namespace fs                  = std::filesystem;
    std::string        folderPath = "src/Animations/" + entityName + "/" + animationName;
    std::vector<Frame> frames;
 
@@ -187,7 +190,6 @@ Animation PrintableFactory::loadAnimation(std::string entityName, std::string an
       {
          std::string fileName     = entry.path().filename().string();
          std::string fullFilePath = folderPath + "/" + fileName;
-         std::cout << "Loading file: " << fullFilePath << std::endl;
          frames.push_back(getFrameFromTextFile(fullFilePath));
       }
       Animation animation = Animation(animationName, frames, repeats);
@@ -206,7 +208,8 @@ Animation PrintableFactory::loadAnimation(std::string entityName, std::string an
 
 // public static ---------------------------------------------------------------------------------------------
 std::shared_ptr<Entity> PrintableFactory::loadEntity(const std::string entityName, bool visable,
-                                                     bool moveableByCamera)
+                                                     bool                           moveableByCamera,
+                                                     std::shared_ptr<NcursesWindow> ncursesWindow)
 {
    std::vector<Animation> animations;
    std::string            basePath = "src/Animations/" + entityName;
@@ -228,14 +231,30 @@ std::shared_ptr<Entity> PrintableFactory::loadEntity(const std::string entityNam
       std::cerr << "Error loading animations for entity '" << entityName << "': " << e.what() << std::endl;
    }
    auto entity = std::make_shared<Entity>(entityName, animations, visable, moveableByCamera);
-   allPrintables.push_back(entity);
-   printablesNeedSorted = true;
+
+   if (ncursesWindow != nullptr)
+   {
+      entity->setNcurseWindow(ncursesWindow->getWindow());
+      ncursesWindow->addPrintable(entity);
+      ncursesWindow->setPrintablesNeedSorted(true);
+   }
+   else if (!ncursesWindows.empty())
+   {
+      entity->setNcurseWindow(ncursesWindows.at(0)->getWindow());
+      ncursesWindows.at(0)->addPrintable(entity);
+      ncursesWindows.at(0)->setPrintablesNeedSorted(true);
+   }
+   else
+   {
+      std::cerr << "Warning: No ncurses windows available for entity '" << entityName << "'" << std::endl;
+   }
    return entity;
 }
 
 // public static ---------------------------------------------------------------------------------------------
 std::shared_ptr<UIElement> PrintableFactory::loadUIElement(const std::string directoryName,
-                                                           const bool visable, const bool moveableByCamera)
+                                                           const bool visable, const bool moveableByCamera,
+                                                           std::shared_ptr<NcursesWindow> ncursesWindow)
 
 {
    std::vector<Animation> animations;
@@ -258,15 +277,29 @@ std::shared_ptr<UIElement> PrintableFactory::loadUIElement(const std::string dir
       std::cerr << "Error loading animations for entity '" << directoryName << "': " << e.what() << std::endl;
    }
    auto uiElement = std::make_shared<UIElement>(directoryName, animations, visable, moveableByCamera);
-   allPrintables.push_back(uiElement);
-   printablesNeedSorted = true;
+   if (ncursesWindow != nullptr)
+   {
+      uiElement->setNcurseWindow(ncursesWindow->getWindow());
+      ncursesWindow->addPrintable(uiElement);
+      ncursesWindow->setPrintablesNeedSorted(true);
+   }
+   else if (!ncursesWindows.empty())
+   {
+      uiElement->setNcurseWindow(ncursesWindows.at(0)->getWindow());
+      ncursesWindows.at(0)->addPrintable(uiElement);
+      ncursesWindows.at(0)->setPrintablesNeedSorted(true);
+   }
+   else
+   {
+      std::cerr << "Warning: No ncurses windows available for UIElement '" << directoryName << "'" << std::endl;
+   }
    return uiElement;
 };
 
 // public static ---------------------------------------------------------------------------------------------
-std::shared_ptr<Button> PrintableFactory::loadButton(const std::string directoryName, const bool visable,
-                                                     const bool            moveableByCamera,
-                                                     std::function<void()> function)
+std::shared_ptr<Button>
+PrintableFactory::loadButton(const std::string directoryName, const bool visable, const bool moveableByCamera,
+                             std::function<void()> function, std::shared_ptr<NcursesWindow> ncursesWindow)
 {
    std::vector<Animation> animations;
    std::string            basePath = "src/Animations/" + directoryName;
@@ -288,22 +321,37 @@ std::shared_ptr<Button> PrintableFactory::loadButton(const std::string directory
       std::cerr << "Error loading animations for entity '" << directoryName << "': " << e.what() << std::endl;
    }
    auto button = std::make_shared<Button>(directoryName, animations, visable, moveableByCamera, function);
-   allPrintables.push_back(button);
-   printablesNeedSorted = true;
-   
+   if (ncursesWindow != nullptr)
+   {
+      button->setNcurseWindow(ncursesWindow->getWindow());
+      ncursesWindow->addPrintable(button);
+      ncursesWindow->setPrintablesNeedSorted(true);
+   }
+   else if (!ncursesWindows.empty())
+   {
+      button->setNcurseWindow(ncursesWindows.at(0)->getWindow());
+      ncursesWindows.at(0)->addPrintable(button);
+      ncursesWindows.at(0)->setPrintablesNeedSorted(true);
+   }
+   else
+   {
+      std::cerr << "Warning: No ncurses windows available for Button '" << directoryName << "'" << std::endl;
+   }
+
    // Automatically register with global InputHandler
    globalInputHandler.addButton(button);
-   
+
    return button;
 }
 
 // public static ---------------------------------------------------------------------------------------------
-std::shared_ptr<Button> PrintableFactory::newButton(std::string text, std::function<void()> function)
+std::shared_ptr<Button> PrintableFactory::newButton(std::string text, std::function<void()> function,
+                                                    std::shared_ptr<NcursesWindow> ncursesWindow)
 {
    // Load the default button sprite
    std::vector<Animation> animations;
-   std::string basePath = "src/Animations/defaultBorder";
-   
+   std::string            basePath = "src/Animations/defaultBorder";
+
    try
    {
       for (const auto& entry : fs::directory_iterator(basePath))
@@ -320,34 +368,49 @@ std::shared_ptr<Button> PrintableFactory::newButton(std::string text, std::funct
    {
       std::cerr << "Error loading default button animations: " << e.what() << std::endl;
       // Create a fallback button if loading fails
-      std::vector<Pixel> fallbackPixels = {
-         Pixel(Position(0, 0), L'+'), Pixel(Position(1, 0), L'-'), Pixel(Position(2, 0), L'-'), 
-         Pixel(Position(3, 0), L'-'), Pixel(Position(4, 0), L'-'), Pixel(Position(5, 0), L'+'),
-         Pixel(Position(0, 1), L'|'), Pixel(Position(1, 1), L' '), Pixel(Position(2, 1), L' '), 
-         Pixel(Position(3, 1), L' '), Pixel(Position(4, 1), L' '), Pixel(Position(5, 1), L'|'),
-         Pixel(Position(0, 2), L'+'), Pixel(Position(1, 2), L'-'), Pixel(Position(2, 2), L'-'), 
-         Pixel(Position(3, 2), L'-'), Pixel(Position(4, 2), L'-'), Pixel(Position(5, 2), L'+')
-      };
-             Sprite fallbackSprite(fallbackPixels, 1);
-      Frame fallbackFrame(fallbackSprite, 10);
+      std::vector<Pixel> fallbackPixels = {Pixel(Position(0, 0), L'+'), Pixel(Position(1, 0), L'-'),
+                                           Pixel(Position(2, 0), L'-'), Pixel(Position(3, 0), L'-'),
+                                           Pixel(Position(4, 0), L'-'), Pixel(Position(5, 0), L'+'),
+                                           Pixel(Position(0, 1), L'|'), Pixel(Position(1, 1), L' '),
+                                           Pixel(Position(2, 1), L' '), Pixel(Position(3, 1), L' '),
+                                           Pixel(Position(4, 1), L' '), Pixel(Position(5, 1), L'|'),
+                                           Pixel(Position(0, 2), L'+'), Pixel(Position(1, 2), L'-'),
+                                           Pixel(Position(2, 2), L'-'), Pixel(Position(3, 2), L'-'),
+                                           Pixel(Position(4, 2), L'-'), Pixel(Position(5, 2), L'+')};
+      Sprite             fallbackSprite(fallbackPixels, 1);
+      Frame              fallbackFrame(fallbackSprite, 10);
       std::vector<Frame> fallbackFrames = {fallbackFrame};
-      Animation fallbackAnim("default", fallbackFrames, true);
+      Animation          fallbackAnim("default", fallbackFrames, true);
       animations.push_back(fallbackAnim);
    }
-   
+
    // Create the button
    auto button = std::make_shared<Button>("defaultBorder", animations, true, false, function);
 
    // Set the text (this will wrap the outline around the text)
    button->setText(text);
-   
+
    // Add to printables list
-   allPrintables.push_back(button);
-   printablesNeedSorted = true;
-   
+   if (ncursesWindow != nullptr)
+   {
+      button->setNcurseWindow(ncursesWindow->getWindow());
+      ncursesWindow->addPrintable(button);
+      ncursesWindow->setPrintablesNeedSorted(true);
+   }
+   else if (!ncursesWindows.empty())
+   {
+      button->setNcurseWindow(ncursesWindows.at(0)->getWindow());
+      ncursesWindows.at(0)->addPrintable(button);
+      ncursesWindows.at(0)->setPrintablesNeedSorted(true);
+   }
+   else
+   {
+      std::cerr << "Warning: No ncurses windows available for Button with text '" << text << "'" << std::endl;
+   }
+
    // Automatically register with global InputHandler
    globalInputHandler.addButton(button);
-   
+
    return button;
 }
 
@@ -455,4 +518,52 @@ void PrintableFactory::writePrintableToTextFiles(const std::shared_ptr<Printable
          out.close();
       }
    }
+}
+
+// public static ---------------------------------------------------------------------------------------------
+std::vector<std::shared_ptr<Button>> PrintableFactory::createButtonGroup(
+      const std::vector<std::pair<std::string, std::function<void()>>>& buttonData,
+      ScreenLockPosition position, StackDirection direction, std::shared_ptr<NcursesWindow> ncursesWindow)
+{
+   std::vector<std::shared_ptr<Button>> buttons;
+
+   for (const auto& data : buttonData)
+   {
+      auto button = newButton(data.first, data.second, ncursesWindow);
+      button->setDynamicPosition(position, direction);
+      buttons.push_back(button);
+   }
+
+   return buttons;
+}
+
+// public static ---------------------------------------------------------------------------------------------
+std::pair<std::shared_ptr<Button>, std::shared_ptr<Slider>>
+PrintableFactory::createSliderWithButton(int sliderLength, std::string buttonText,
+                                         std::function<void()> buttonFunc, ScreenLockPosition position,
+                                         StackDirection direction, std::shared_ptr<NcursesWindow> ncursesWindow)
+{
+   auto button = newButton(buttonText, buttonFunc, ncursesWindow);
+   auto slider = std::make_shared<Slider>(sliderLength, true);
+
+   button->setDynamicPosition(position, direction);
+   slider->setDynamicPosition(position, direction);
+   slider->setVisability(true);
+   slider->setMoveableByCamera(false);
+   slider->setAllAnimationSpriteLayers(1);
+
+   if (ncursesWindow)
+   {
+      slider->setNcurseWindow(ncursesWindow->getWindow());
+      ncursesWindow->addPrintable(slider);
+   }
+   else if (!ncursesWindows.empty())
+   {
+      slider->setNcurseWindow(ncursesWindows.at(0)->getWindow());
+      ncursesWindows.at(0)->addPrintable(slider);
+   }
+
+   globalInputHandler.addSlider(slider);
+
+   return std::make_pair(button, slider);
 }

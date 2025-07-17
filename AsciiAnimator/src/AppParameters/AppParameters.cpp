@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// @file AppParameters.h
+/// @file AppParameters.cpp
 /// @author Nicholas Witulski (nicwitulski@gmail.com)
-/// @brief Global parameters for application
+/// @brief Implementation of application parameters
 /// @version 0.1
 /// @date 2025-06-27
 ///
@@ -10,3 +10,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "AppParameters.h"
+
+// No implementation needed for enum class States
