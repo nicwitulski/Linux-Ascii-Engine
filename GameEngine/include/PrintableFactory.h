@@ -132,6 +132,18 @@ public:
                                             std::shared_ptr<NcursesWindow> ncursesWindow = nullptr);
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn newButton (no function overload)
+   ///
+   /// Creates a button with no function (label only) using the default sprite, visibility = true,
+   /// and moveableByCamera = false. This button cannot be clicked or highlighted.
+   ///
+   /// @param text - The text to display on the button
+   /// @return A new Button object with no function
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   static std::shared_ptr<Button> newButton(std::string                    text,
+                                            std::shared_ptr<NcursesWindow> ncursesWindow = nullptr);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn newButton (template overload)
    ///
    /// Creates a button using the default sprite with a member function pointer.

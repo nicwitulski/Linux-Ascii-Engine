@@ -1,8 +1,8 @@
 # Makefile for App using GameEngine
 
 CXX := g++
-CXXFLAGS := -std=c++17 -Wall -Wextra -I../GameEngine/src
-LDFLAGS := ../GameEngine/bin/libgameengine.a -lncursesw
+CXXFLAGS := -std=c++17 -Wall -Wextra -D_XOPEN_SOURCE_EXTENDED -I../GameEngine/src
+LDFLAGS := ../GameEngine/bin/libgameengine.a -lformw -lmenuw -lncursesw
 
 # Directories
 SRC_DIR := src
@@ -55,12 +55,21 @@ rebuild:
 	@$(MAKE) clean
 	@$(MAKE) all
 
-.PHONY: all clean rebuild build_gameengine
+.PHONY: all clean rebuild build_gameengine test run_test
 
 # Build and run the application
 run: all
 	@echo "Running the application..."
 	@./$(TARGET)
+
+# Build and run standalone test (without GameEngine)
+test: $(SRC_DIR)/main.cpp
+	@echo "Building standalone test..."
+	$(CXX) -std=c++17 -Wall -Wextra $< -o $(BIN_DIR)/test -lmenu -lform -lncurses
+
+run_test: test
+	@echo "Running standalone test..."
+	@./$(BIN_DIR)/test
 
 .PHONY: compile_commands
 compile_commands:

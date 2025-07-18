@@ -11,6 +11,8 @@
 
 #include "../../../include/UIElement.h"
 #include "../../../include/Parameters.h"
+#include <algorithm>
+#include <climits>
 #include <map>
 #include <set>
 
@@ -38,6 +40,12 @@ UIElement::UIElement()
    m_visable          = false;
    m_moveableByCamera = true;
    m_ncurseWindow     = nullptr;
+
+   // Initialize border properties
+   m_borderEnabled  = false;
+   m_borderWidth    = 0;
+   m_borderHeight   = 0;
+   m_borderAutoSize = true;
 };
 
 // public ----------------------------------------------------------------------------------------------------
@@ -51,6 +59,13 @@ UIElement::UIElement(const std::string printableName, const std::vector<Animatio
    m_moveableByCamera     = moveableByCamera;
    m_lockPosition         = ScreenLockPosition::NONE;
    m_ncurseWindow         = nullptr;
+
+   // Initialize border properties
+   m_borderEnabled  = false;
+   m_borderWidth    = 0;
+   m_borderHeight   = 0;
+   m_borderAutoSize = true;
+
    setPositions();
 };
 
@@ -81,36 +96,50 @@ void UIElement::setPositions()
 // public ----------------------------------------------------------------------------------------------------
 void UIElement::setDynamicPosition(ScreenLockPosition position, StackDirection direction)
 {
+   // First, clean up any expired elements to prevent accumulation
+   cleanupExpiredElements();
+
    m_lockPosition   = position;
    m_stackDirection = direction;
+
+   // Helper function to check if element is already in vector
+   auto addIfNotPresent = [this](std::vector<std::shared_ptr<UIElement>>& vec)
+   {
+      auto thisPtr = shared_from_this();
+      if (std::find(vec.begin(), vec.end(), thisPtr) == vec.end())
+      {
+         vec.push_back(thisPtr);
+      }
+   };
+
    switch (m_lockPosition)
    {
       case ScreenLockPosition::TOP_MIDDLE:
-         topMiddleUIElements.push_back(shared_from_this());
+         addIfNotPresent(topMiddleUIElements);
          break;
       case ScreenLockPosition::RIGHT_MIDDLE:
-         rightMiddleUIElements.push_back(shared_from_this());
+         addIfNotPresent(rightMiddleUIElements);
          break;
       case ScreenLockPosition::BOTTOM_MIDDLE:
-         bottomMiddleUIElements.push_back(shared_from_this());
+         addIfNotPresent(bottomMiddleUIElements);
          break;
       case ScreenLockPosition::LEFT_MIDDLE:
-         leftMiddleUIElements.push_back(shared_from_this());
+         addIfNotPresent(leftMiddleUIElements);
          break;
       case ScreenLockPosition::CENTER:
-         middleUIElements.push_back(shared_from_this());
+         addIfNotPresent(middleUIElements);
          break;
       case ScreenLockPosition::TOP_LEFT_CORNER:
-         topLeftUIElements.push_back(shared_from_this());
+         addIfNotPresent(topLeftUIElements);
          break;
       case ScreenLockPosition::TOP_RIGHT_CORNER:
-         topRightUIElements.push_back(shared_from_this());
+         addIfNotPresent(topRightUIElements);
          break;
       case ScreenLockPosition::BOTTOM_LEFT_CORNER:
-         bottomLeftUIElements.push_back(shared_from_this());
+         addIfNotPresent(bottomLeftUIElements);
          break;
       case ScreenLockPosition::BOTTOM_RIGHT_CORNER:
-         bottomRightUIElements.push_back(shared_from_this());
+         addIfNotPresent(bottomRightUIElements);
          break;
 
       default:
@@ -417,6 +446,9 @@ void UIElement::updateWindowLockedPositions(WINDOW* targetWindow)
 // public ----------------------------------------------------------------------------------------------------
 void UIElement::updateAllLockedPositions()
 {
+   // Clean up expired elements first
+   cleanupExpiredElements();
+
    // Update all windows by iterating through ncursesWindows
    std::set<WINDOW*> processedWindows;
 
@@ -434,6 +466,55 @@ void UIElement::updateAllLockedPositions()
          processedWindows.insert(window);
       }
    }
+}
+
+// public ----------------------------------------------------------------------------------------------------
+void UIElement::cleanupExpiredElements()
+{
+   // Helper function to remove elements that are no longer valid
+   auto removeInactiveElements = [](std::vector<std::shared_ptr<UIElement>>& elements)
+   {
+      elements.erase(std::remove_if(elements.begin(), elements.end(),
+                                    [](const std::shared_ptr<UIElement>& elem)
+                                    {
+                                       // Only remove if null - don't remove temporarily hidden elements
+                                       return !elem;
+                                    }),
+                     elements.end());
+   };
+
+   // Clean up all positioning vectors
+   removeInactiveElements(topMiddleUIElements);
+   removeInactiveElements(rightMiddleUIElements);
+   removeInactiveElements(bottomMiddleUIElements);
+   removeInactiveElements(leftMiddleUIElements);
+   removeInactiveElements(middleUIElements);
+   removeInactiveElements(topLeftUIElements);
+   removeInactiveElements(topRightUIElements);
+   removeInactiveElements(bottomLeftUIElements);
+   removeInactiveElements(bottomRightUIElements);
+}
+
+// public ----------------------------------------------------------------------------------------------------
+void UIElement::removeFromPositioningVectors(std::shared_ptr<UIElement> element)
+{
+   if (!element)
+      return;
+
+   // Helper function to remove element from a vector
+   auto removeFromVector = [&element](std::vector<std::shared_ptr<UIElement>>& vec)
+   { vec.erase(std::remove(vec.begin(), vec.end(), element), vec.end()); };
+
+   // Remove from all positioning vectors
+   removeFromVector(topMiddleUIElements);
+   removeFromVector(rightMiddleUIElements);
+   removeFromVector(bottomMiddleUIElements);
+   removeFromVector(leftMiddleUIElements);
+   removeFromVector(middleUIElements);
+   removeFromVector(topLeftUIElements);
+   removeFromVector(topRightUIElements);
+   removeFromVector(bottomLeftUIElements);
+   removeFromVector(bottomRightUIElements);
 }
 
 // public ----------------------------------------------------------------------------------------------------
@@ -746,3 +827,211 @@ void UIElement::displace(int dx, int dy)
       }
    }
 };
+
+// public ----------------------------------------------------------------------------------------------------
+void UIElement::setBorder(bool enabled)
+{
+   m_borderEnabled  = enabled;
+   m_borderAutoSize = true;
+
+   if (enabled)
+   {
+      calculateBorderDimensions();
+      applyBorder();
+   }
+   else
+   {
+      removeBorder();
+   }
+
+   setPositions();
+}
+
+// public ----------------------------------------------------------------------------------------------------
+void UIElement::setBorder(bool enabled, int width, int height)
+{
+   m_borderEnabled  = enabled;
+   m_borderAutoSize = false;
+   m_borderWidth    = width;
+   m_borderHeight   = height;
+
+   if (enabled)
+   {
+      applyBorder();
+   }
+   else
+   {
+      removeBorder();
+   }
+
+   setPositions();
+}
+
+// public ----------------------------------------------------------------------------------------------------
+bool UIElement::isBorderEnabled() const
+{
+   return m_borderEnabled;
+}
+
+// protected -------------------------------------------------------------------------------------------------
+void UIElement::applyBorder()
+{
+   if (!m_borderEnabled)
+   {
+      return;
+   }
+
+   // Get current animation and sprite
+   Animation& animation = getCurrentAnimationMutable();
+   Sprite&    sprite    = animation.getCurrentFrameSpriteMutable();
+
+   // Use the original pixels as the base (without any borders)
+   std::vector<Pixel> originalPixels = m_originalPixels;
+
+   // Calculate border dimensions if auto-sizing
+   if (m_borderAutoSize)
+   {
+      calculateBorderDimensions();
+   }
+
+   // Find the bounds of original content
+   int  minX = 0, maxX = 0, minY = 0, maxY = 0;
+   bool firstPixel = true;
+
+   for (const Pixel& pixel : originalPixels)
+   {
+      int x = pixel.getPosition().getX();
+      int y = pixel.getPosition().getY();
+
+      if (firstPixel)
+      {
+         minX = maxX = x;
+         minY = maxY = y;
+         firstPixel  = false;
+      }
+      else
+      {
+         if (x < minX)
+            minX = x;
+         if (x > maxX)
+            maxX = x;
+         if (y < minY)
+            minY = y;
+         if (y > maxY)
+            maxY = y;
+      }
+   }
+
+   // Shift existing content to make room for border
+   std::vector<Pixel> newPixels;
+   for (const Pixel& pixel : originalPixels)
+   {
+      Position newPos(pixel.getPosition().getX() + 1, pixel.getPosition().getY() + 1);
+      Pixel    newPixel(newPos, pixel.getCharacter(), pixel.getTextColor(), pixel.getBackgroundColor(),
+                        pixel.getAttributes());
+      newPixels.push_back(newPixel);
+   }
+
+   // Border characters
+   wchar_t topLeft = L'+', topRight = L'+', bottomLeft = L'+', bottomRight = L'+';
+   wchar_t horizontal = L'-', vertical = L'|';
+
+   // Add border pixels
+   int borderWidth  = m_borderAutoSize ? (maxX - minX + 3) : m_borderWidth;
+   int borderHeight = m_borderAutoSize ? (maxY - minY + 3) : m_borderHeight;
+
+   // Top border
+   for (int x = 0; x < borderWidth; x++)
+   {
+      wchar_t ch = (x == 0) ? topLeft : ((x == borderWidth - 1) ? topRight : horizontal);
+      newPixels.push_back(Pixel(Position(x, 0), ch));
+   }
+
+   // Bottom border
+   for (int x = 0; x < borderWidth; x++)
+   {
+      wchar_t ch = (x == 0) ? bottomLeft : ((x == borderWidth - 1) ? bottomRight : horizontal);
+      newPixels.push_back(Pixel(Position(x, borderHeight - 1), ch));
+   }
+
+   // Left and right borders
+   for (int y = 1; y < borderHeight - 1; y++)
+   {
+      newPixels.push_back(Pixel(Position(0, y), vertical));
+      newPixels.push_back(Pixel(Position(borderWidth - 1, y), vertical));
+   }
+
+   // Update sprite with new pixels
+   sprite.setPixels(newPixels);
+   sprite.setAnchor(Position(0, 0));
+}
+
+// protected -------------------------------------------------------------------------------------------------
+void UIElement::removeBorder()
+{
+   // Get current animation and sprite
+   Animation& animation = getCurrentAnimationMutable();
+   Sprite&    sprite    = animation.getCurrentFrameSpriteMutable();
+
+   // Restore the original sprite (without borders)
+   sprite.setPixels(m_originalPixels);
+   sprite.setAnchor(Position(0, 0));
+}
+
+// protected -------------------------------------------------------------------------------------------------
+void UIElement::calculateBorderDimensions()
+{
+   // Get current animation and sprite
+   const Animation&          animation     = getCurrentAnimation();
+   const Sprite&             sprite        = animation.getCurrentFrameSprite();
+   const std::vector<Pixel>& currentPixels = sprite.getPixels();
+
+   if (currentPixels.empty())
+   {
+      m_borderWidth  = 4; // Minimum border size
+      m_borderHeight = 3;
+      return;
+   }
+
+   // Find the bounds of current content
+   int  minX = 0, maxX = 0, minY = 0, maxY = 0;
+   bool firstPixel = true;
+
+   for (const Pixel& pixel : currentPixels)
+   {
+      int x = pixel.getPosition().getX();
+      int y = pixel.getPosition().getY();
+
+      if (firstPixel)
+      {
+         minX = maxX = x;
+         minY = maxY = y;
+         firstPixel  = false;
+      }
+      else
+      {
+         if (x < minX)
+            minX = x;
+         if (x > maxX)
+            maxX = x;
+         if (y < minY)
+            minY = y;
+         if (y > maxY)
+            maxY = y;
+      }
+   }
+
+   // Calculate border dimensions (content + 2 for border on each side)
+   m_borderWidth  = (maxX - minX) + 3;
+   m_borderHeight = (maxY - minY) + 3;
+}
+
+// protected -------------------------------------------------------------------------------------------------
+void UIElement::storeOriginalSprite()
+{
+   // This method is now handled by Button::setText() for buttons
+   // For other UI elements, just store the current pixels as-is
+   const Animation& animation = getCurrentAnimation();
+   const Sprite&    sprite    = animation.getCurrentFrameSprite();
+   m_originalPixels           = sprite.getPixels();
+}

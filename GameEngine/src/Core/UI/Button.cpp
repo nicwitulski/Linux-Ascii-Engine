@@ -28,6 +28,12 @@ Button::Button()
    m_maxPosition      = Position(0, 0);
    m_ncurseWindow     = nullptr;
    m_isHighlighted    = false;
+
+   // Initialize automatic highlighting with default colors
+   m_autoHighlightEnabled = true;
+   m_hoverColor           = RGB(750, 750, 750); // Light gray
+   m_clickColor           = RGB(500, 500, 500); // Darker gray
+   m_selectedColor        = RGB(250, 250, 250); // Brightest
 }
 
 // public ----------------------------------------------------------------------------------------------------
@@ -46,6 +52,38 @@ Button::Button(const std::string printableName, const std::vector<Animation> ani
    setPositions();
    m_ncurseWindow  = nullptr;
    m_isHighlighted = false;
+
+   // Initialize automatic highlighting with default colors
+   m_autoHighlightEnabled = true;
+   m_hoverColor           = RGB(750, 750, 750); // Light gray
+   m_clickColor           = RGB(500, 500, 500); // Darker gray
+   m_selectedColor        = RGB(250, 250, 250); // Brightest
+
+   // Store original background colors
+   storeOriginalColors();
+}
+
+// public ----------------------------------------------------------------------------------------------------
+Button::Button(const std::string printableName, const std::vector<Animation> animations, const bool visable,
+               const bool moveableByCamera)
+{
+   m_printableName        = printableName;
+   m_animations           = animations;
+   m_currentAnimationName = m_animations.at(0).getAnimationName();
+   m_visable              = visable;
+   m_moveableByCamera     = moveableByCamera;
+   m_lockPosition         = ScreenLockPosition::NONE;
+   m_minPosition          = Position(0, 0);
+   m_maxPosition          = Position(0, 0);
+   setPositions();
+   m_ncurseWindow  = nullptr;
+   m_isHighlighted = false;
+
+   // Disable automatic highlighting for buttons without functions
+   m_autoHighlightEnabled = false;
+   m_hoverColor           = RGB(750, 750, 750); // Light gray
+   m_clickColor           = RGB(500, 500, 500); // Darker gray
+   m_selectedColor        = RGB(250, 250, 250); // Brightest
 
    // Store original background colors
    storeOriginalColors();
@@ -68,6 +106,12 @@ void Button::executeFunction()
    {
       return;
    }
+}
+
+// public ----------------------------------------------------------------------------------------------------
+bool Button::hasFunction() const
+{
+   return static_cast<bool>(m_function);
 }
 
 // public ----------------------------------------------------------------------------------------------------
@@ -174,6 +218,21 @@ void Button::setText(std::string text)
          maxLineLength = line.length();
       }
    }
+
+   // First, create the content without borders and store it
+   std::vector<Pixel> contentPixels;
+   for (size_t y = 0; y < lines.size(); y++)
+   {
+      std::string line = lines[y];
+      for (size_t x = 0; x < line.length(); x++)
+      {
+         contentPixels.push_back(
+               Pixel(Position(static_cast<int>(x), static_cast<int>(y)), static_cast<wchar_t>(line[x])));
+      }
+   }
+
+   // Always store the pure text content (this is the definitive content without borders)
+   m_originalPixels = contentPixels;
 
    size_t borderLength = std::max(maxLineLength + 4, size_t(6));
 
@@ -290,4 +349,52 @@ void Button::storeOriginalColors()
       m_originalBackgroundColors.push_back(pixel.getBackgroundColor());
       m_originalPositions.push_back(pixel.getPosition());
    }
+}
+
+// public ----------------------------------------------------------------------------------------------------
+void Button::setAutoHighlightEnabled(bool enabled)
+{
+   m_autoHighlightEnabled = enabled;
+}
+
+// public ----------------------------------------------------------------------------------------------------
+bool Button::isAutoHighlightEnabled() const
+{
+   return m_autoHighlightEnabled;
+}
+
+// public ----------------------------------------------------------------------------------------------------
+void Button::setHoverColor(const RGB& color)
+{
+   m_hoverColor = color;
+}
+
+// public ----------------------------------------------------------------------------------------------------
+void Button::setClickColor(const RGB& color)
+{
+   m_clickColor = color;
+}
+
+// public ----------------------------------------------------------------------------------------------------
+void Button::setSelectedColor(const RGB& color)
+{
+   m_selectedColor = color;
+}
+
+// public ----------------------------------------------------------------------------------------------------
+const RGB& Button::getHoverColor() const
+{
+   return m_hoverColor;
+}
+
+// public ----------------------------------------------------------------------------------------------------
+const RGB& Button::getClickColor() const
+{
+   return m_clickColor;
+}
+
+// public ----------------------------------------------------------------------------------------------------
+const RGB& Button::getSelectedColor() const
+{
+   return m_selectedColor;
 }

@@ -18,6 +18,8 @@
 #include "GameObject.h"
 #include "GameState.h"
 #include "InputHandler.h"
+#include "Menu.h"
+#include "NcursesMenu.h"
 #include "Parameters.h"
 #include "Pixel.h"
 #include "Position.h"
@@ -27,6 +29,10 @@
 #include "Slider.h"
 #include "Sprite.h"
 #include "UIElement.h"
+#include <locale.h>
+#include <ncursesw/form.h>
+#include <ncursesw/menu.h>
+#include <ncursesw/ncurses.h>
 #include <chrono>
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////

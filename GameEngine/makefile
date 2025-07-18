@@ -2,7 +2,7 @@
 
 CXX := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -I./src
-LDFLAGS :=
+LDFLAGS := -lformw -lmenuw -lncursesw
 
 SRC_DIR := src
 OBJ_DIR := build

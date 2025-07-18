@@ -13,7 +13,7 @@
 #include "../../include/ColorManager.h"
 #include "../../include/Parameters.h"
 #include "../../include/UIElement.h"
-#include <ncurses.h>
+#include <ncursesw/ncurses.h>
 #include <cwchar>
 
 // public static ---------------------------------------------------------------------------------------------

@@ -19,12 +19,17 @@
 InputHandler::InputHandler()
 {
    memset(&event, 0, sizeof(event));
-   sliderDragging      = false;
-   draggedSlider       = nullptr;
-   windowDragging      = false;
-   draggedWindow       = nullptr;
-   dragOffset          = Position(0, 0);
-   mouseEventProcessed = false;
+   sliderDragging            = false;
+   draggedSlider             = nullptr;
+   windowDragging            = false;
+   draggedWindow             = nullptr;
+   dragOffset                = Position(0, 0);
+   mouseEventProcessed       = false;
+   contextsExplicitlyManaged = false;
+   pressedButton             = nullptr;
+   currentHoveredButton      = nullptr;
+   currentClickedButton      = nullptr;
+   currentSelectedButton     = nullptr;
 }
 
 // public ----------------------------------------------------------------------------------------------------
@@ -52,6 +57,53 @@ void InputHandler::removeSlider(std::shared_ptr<Slider> slider)
 }
 
 // public ----------------------------------------------------------------------------------------------------
+void InputHandler::addContext(std::shared_ptr<NcursesWindow> window)
+{
+   contextsExplicitlyManaged = true;
+   // Only add if not already in the list
+   if (std::find(inFocusedWindows.begin(), inFocusedWindows.end(), window) == inFocusedWindows.end())
+   {
+      inFocusedWindows.push_back(window);
+   }
+}
+
+// public ----------------------------------------------------------------------------------------------------
+void InputHandler::removeContext(std::shared_ptr<NcursesWindow> window)
+{
+   contextsExplicitlyManaged = true;
+   inFocusedWindows.erase(std::remove(inFocusedWindows.begin(), inFocusedWindows.end(), window),
+                          inFocusedWindows.end());
+}
+
+// public ----------------------------------------------------------------------------------------------------
+void InputHandler::clearContext()
+{
+   contextsExplicitlyManaged = true;
+   inFocusedWindows.clear();
+}
+
+// private ---------------------------------------------------------------------------------------------------
+bool InputHandler::isWindowInFocus(WINDOW* window) const
+{
+   // If contexts have never been explicitly managed, allow all interactions (backward compatibility)
+   if (!contextsExplicitlyManaged)
+   {
+      return true;
+   }
+
+   // Check if the window is in the focused windows list
+   for (const auto& focusedWindow : inFocusedWindows)
+   {
+      if (focusedWindow->getWindow() == window)
+      {
+         return true;
+      }
+   }
+
+   return false;
+}
+
+// public ----------------------------------------------------------------------------------------------------
 bool InputHandler::processInput(int userInput)
 {
    mouseEventProcessed = false; // Reset flag at start of processing
@@ -67,6 +119,9 @@ bool InputHandler::processInput(int userInput)
          // Handle mouse button press - use separate if statements, not else if
          if (event.bstate & BUTTON1_PRESSED)
          {
+            // Update button highlighting for mouse press
+            updateButtonHighlighting(mousePosition, true);
+
             // Check for window dragging first (takes precedence over UI elements)
             if (handleWindowPress(mousePosition))
             {
@@ -82,6 +137,9 @@ bool InputHandler::processInput(int userInput)
          // Handle mouse button release - use separate if statements, not else if
          if (event.bstate & BUTTON1_RELEASED)
          {
+            // Update button highlighting for mouse release
+            updateButtonHighlighting(mousePosition, false);
+
             handleWindowRelease();
             handleMouseRelease();
          }
@@ -96,6 +154,9 @@ bool InputHandler::processInput(int userInput)
          // Handle mouse movement/dragging - use separate if statements, not else if
          if (event.bstate & REPORT_MOUSE_POSITION)
          {
+            // Update button highlighting for mouse movement
+            updateButtonHighlighting(mousePosition, false);
+
             handleWindowDrag(mousePosition);
             handleMouseDrag(mousePosition);
          }
@@ -113,10 +174,14 @@ bool InputHandler::handleMousePress(Position mousePosition)
    {
       if (slider->mouseInBounds(mousePosition))
       {
-         sliderDragging = true;
-         draggedSlider  = slider;
-         slider->setPositionFromMouse(mousePosition);
-         return true;
+         // Check if the slider's window is in focus
+         if (isWindowInFocus(slider->getNcurseWindow()))
+         {
+            sliderDragging = true;
+            draggedSlider  = slider;
+            slider->setPositionFromMouse(mousePosition);
+            return true;
+         }
       }
    }
 
@@ -125,8 +190,12 @@ bool InputHandler::handleMousePress(Position mousePosition)
    {
       if (button->mouseInBounds(mousePosition))
       {
-         button->executeFunction();
-         return true;
+         // Check if the button's window is in focus and the button has a function
+         if (isWindowInFocus(button->getNcurseWindow()) && button->hasFunction())
+         {
+            pressedButton = button; // Record which button was pressed
+            return true;
+         }
       }
    }
 
@@ -138,6 +207,17 @@ void InputHandler::handleMouseRelease()
 {
    sliderDragging = false;
    draggedSlider  = nullptr;
+
+   // Execute button function if there was a pressed button and mouse is still over it
+   if (pressedButton)
+   {
+      Position mousePosition = Position(event.x, event.y);
+      if (pressedButton->mouseInBounds(mousePosition))
+      {
+         pressedButton->executeFunction();
+      }
+      pressedButton = nullptr;
+   }
 }
 
 // private ---------------------------------------------------------------------------------------------------
@@ -159,6 +239,26 @@ void InputHandler::clear()
    draggedSlider  = nullptr;
    windowDragging = false;
    draggedWindow  = nullptr;
+   inFocusedWindows.clear();
+   contextsExplicitlyManaged = false;
+   pressedButton             = nullptr;
+
+   // Clear highlighting state
+   if (currentHoveredButton && currentHoveredButton->isAutoHighlightEnabled())
+   {
+      currentHoveredButton->unhighlight();
+   }
+   if (currentClickedButton && currentClickedButton->isAutoHighlightEnabled())
+   {
+      currentClickedButton->unhighlight();
+   }
+   if (currentSelectedButton && currentSelectedButton->isAutoHighlightEnabled())
+   {
+      currentSelectedButton->unhighlight();
+   }
+   currentHoveredButton  = nullptr;
+   currentClickedButton  = nullptr;
+   currentSelectedButton = nullptr;
 }
 
 // public ----------------------------------------------------------------------------------------------------
@@ -237,4 +337,104 @@ void InputHandler::handleWindowDrag(Position mousePosition)
 
       draggedWindow->setBasePosition(newX, newY);
    }
+}
+
+// public ----------------------------------------------------------------------------------------------------
+void InputHandler::setSelectedButton(std::shared_ptr<Button> button)
+{
+   // Unhighlight previous selection
+   if (currentSelectedButton && currentSelectedButton->isAutoHighlightEnabled())
+   {
+      currentSelectedButton->unhighlight();
+   }
+
+   currentSelectedButton = button;
+
+   // Highlight new selection
+   if (currentSelectedButton && currentSelectedButton->isAutoHighlightEnabled())
+   {
+      currentSelectedButton->highlight(currentSelectedButton->getSelectedColor());
+   }
+}
+
+// public ----------------------------------------------------------------------------------------------------
+std::shared_ptr<Button> InputHandler::getSelectedButton() const
+{
+   return currentSelectedButton;
+}
+
+// private ---------------------------------------------------------------------------------------------------
+void InputHandler::updateButtonHighlighting(Position mousePosition, bool isMousePressed)
+{
+   std::shared_ptr<Button> buttonAtPosition = getButtonAtPosition(mousePosition);
+
+   // Handle hover highlighting
+   if (buttonAtPosition != currentHoveredButton)
+   {
+      // Unhighlight previously hovered button (if not clicked and not selected)
+      if (currentHoveredButton && currentHoveredButton->isAutoHighlightEnabled() &&
+          currentHoveredButton != currentClickedButton && currentHoveredButton != currentSelectedButton)
+      {
+         currentHoveredButton->unhighlight();
+      }
+
+      // Highlight new button (if not selected)
+      currentHoveredButton = buttonAtPosition;
+      if (currentHoveredButton && currentHoveredButton->isAutoHighlightEnabled() &&
+          currentHoveredButton != currentClickedButton && currentHoveredButton != currentSelectedButton)
+      {
+         currentHoveredButton->highlight(currentHoveredButton->getHoverColor());
+      }
+   }
+
+   // Handle click highlighting
+   if (isMousePressed && buttonAtPosition)
+   {
+      // Unhighlight previously clicked button (if not selected)
+      if (currentClickedButton && currentClickedButton->isAutoHighlightEnabled() &&
+          currentClickedButton != buttonAtPosition && currentClickedButton != currentSelectedButton)
+      {
+         currentClickedButton->unhighlight();
+      }
+
+      // Highlight clicked button (if not selected)
+      currentClickedButton = buttonAtPosition;
+      if (currentClickedButton && currentClickedButton->isAutoHighlightEnabled() &&
+          currentClickedButton != currentSelectedButton)
+      {
+         currentClickedButton->highlight(currentClickedButton->getClickColor());
+      }
+   }
+   else if (!isMousePressed && currentClickedButton)
+   {
+      // Mouse released - unhighlight clicked button
+      if (currentClickedButton->isAutoHighlightEnabled() && currentClickedButton != currentSelectedButton)
+      {
+         currentClickedButton->unhighlight();
+
+         // Re-highlight if mouse is still over the button
+         if (currentHoveredButton == currentClickedButton)
+         {
+            currentHoveredButton->highlight(currentHoveredButton->getHoverColor());
+         }
+      }
+      currentClickedButton = nullptr;
+   }
+}
+
+// private ---------------------------------------------------------------------------------------------------
+std::shared_ptr<Button> InputHandler::getButtonAtPosition(Position position)
+{
+   for (auto& button : buttons)
+   {
+      if (button && button->isAutoHighlightEnabled() && button->isVisable() && button->mouseInBounds(position))
+      {
+         // Check if the button's window is in focus and the button has a function
+         if (isWindowInFocus(button->getNcurseWindow()) && button->hasFunction())
+         {
+            return button;
+         }
+      }
+   }
+   return nullptr;
 }

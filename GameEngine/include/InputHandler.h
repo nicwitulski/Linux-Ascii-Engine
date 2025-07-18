@@ -34,13 +34,23 @@ private:
    bool                           sliderDragging = false;
    std::shared_ptr<Slider>        draggedSlider; // Track which slider is being dragged
    bool                           windowDragging = false;
-   std::shared_ptr<NcursesWindow> draggedWindow; // Track which window is being dragged
-   Position                       dragOffset;    // Offset from mouse position to window position
-   bool mouseEventProcessed = false;             // Track if we processed a mouse event this frame
+   std::shared_ptr<NcursesWindow> draggedWindow;        // Track which window is being dragged
+   Position                       dragOffset;           // Offset from mouse position to window position
+   bool                    mouseEventProcessed = false; // Track if we processed a mouse event this frame
+   std::shared_ptr<Button> pressedButton; // Track which button was pressed to execute on release
+
+   // Automatic button highlighting state
+   std::shared_ptr<Button> currentHoveredButton;
+   std::shared_ptr<Button> currentClickedButton;
+   std::shared_ptr<Button> currentSelectedButton;
 
    // UI Elements
    std::vector<std::shared_ptr<Button>> buttons;
    std::vector<std::shared_ptr<Slider>> sliders;
+
+   // Window focus management
+   std::vector<std::shared_ptr<NcursesWindow>> inFocusedWindows;
+   bool                                        contextsExplicitlyManaged;
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn handleMousePress
@@ -90,6 +100,33 @@ private:
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    void handleWindowDrag(Position mousePosition);
 
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn updateButtonHighlighting
+   ///
+   /// Updates automatic button highlighting based on mouse position and state
+   /// @param mousePosition - the current mouse position
+   /// @param isMousePressed - whether the mouse button is currently pressed
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void updateButtonHighlighting(Position mousePosition, bool isMousePressed);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn getButtonAtPosition
+   ///
+   /// Finds a button at the given position that has auto-highlighting enabled
+   /// @param position - the position to check
+   /// @return the button at the position, or nullptr if none found
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   std::shared_ptr<Button> getButtonAtPosition(Position position);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn isWindowInFocus
+   ///
+   /// Checks if a window is in the focused windows list
+   /// @param window - the window to check
+   /// @return true if the window is in focus, false otherwise
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   bool isWindowInFocus(WINDOW* window) const;
+
 public:
    InputHandler();
 
@@ -124,6 +161,44 @@ public:
    /// @param slider - the slider to remove
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    void removeSlider(std::shared_ptr<Slider> slider);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn addContext
+   ///
+   /// Adds a window to the focused windows list, enabling input for its UI elements
+   /// @param window - the window to add to focus
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void addContext(std::shared_ptr<NcursesWindow> window);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn removeContext
+   ///
+   /// Removes a window from the focused windows list, disabling input for its UI elements
+   /// @param window - the window to remove from focus
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void removeContext(std::shared_ptr<NcursesWindow> window);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn clearContext
+   ///
+   /// Clears all windows from the focused windows list
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void clearContext();
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn setSelectedButton
+   ///
+   /// Sets the currently selected button (for persistent highlighting)
+   /// @param button - the button to select, or nullptr to clear selection
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void setSelectedButton(std::shared_ptr<Button> button);
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// @fn getSelectedButton
+   ///
+   /// @return the currently selected button, or nullptr if none
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+   std::shared_ptr<Button> getSelectedButton() const;
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
    /// @fn processInput

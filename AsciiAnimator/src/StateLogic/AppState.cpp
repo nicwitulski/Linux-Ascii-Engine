@@ -55,10 +55,9 @@ void AppState::onEnter()
    currentCharacterButton =
          PrintableFactory::newButton("Current Character: x", &AppState::currentCharacterButtonFunc, this);
    eraserSelectButton = PrintableFactory::newButton("Eraser", &AppState::eraserSelectButtonFunc, this);
-   brushSizeButton =
-         PrintableFactory::newButton("Brush size: 1 characters", &AppState::brushSizeButtonFunc, this);
-   frameLengthButton = PrintableFactory::newButton("Frame Length", &AppState::frameLengthButtonFunc, this);
-   nextFrameButton   = PrintableFactory::newButton("Next Frame", &AppState::nextFrameButtonFunc, this);
+   brushSizeButton    = PrintableFactory::newButton("Brush size: 1 characters");
+   frameLengthButton  = PrintableFactory::newButton("Frame Length");
+   nextFrameButton    = PrintableFactory::newButton("Next Frame", &AppState::nextFrameButtonFunc, this);
    playAnimationButton =
          PrintableFactory::newButton("Play Animation", &AppState::playAnimationButtonFunc, this);
    previousFrameButton =
@@ -111,10 +110,7 @@ void AppState::onEnter()
    // Initially hide the greyed background
    frameManager.clearGreyedBackground();
 
-   // Initialize button highlighting state
-   currentHoveredButton  = nullptr;
-   currentClickedButton  = nullptr;
-   currentSelectedButton = nullptr;
+   // Use automatic highlighting system - no manual state tracking needed
 
    // Initialize frame duration editing state
    editingFrameDuration = false;
@@ -131,8 +127,7 @@ void AppState::onEnter()
    drawingTool.setBackgroundColor(currentBackgroundColor);
 
    // Set initial selection to currentCharacterButton since user starts drawing with 'x'
-   currentSelectedButton = currentCharacterButton;
-   currentCharacterButton->highlight(RGB(250, 250, 250));
+   globalInputHandler.setSelectedButton(currentCharacterButton);
 
    // Update slider and button text based on current frame duration
    updateSliderFromFrameDuration();
@@ -143,6 +138,10 @@ void AppState::onEnter()
 
    // Update colors button text
    updateCurrentColorsButtonText();
+
+   // Remove borders from label buttons AFTER all text updates
+   brushSizeButton->setBorder(false);
+   frameLengthButton->setBorder(false);
 }
 
 // public ----------------------------------------------------------------------------------------------------
@@ -161,8 +160,8 @@ void AppState::update()
          std::string buttonText = "Current Character: " + std::string(1, drawingTool.getDrawingCharacter());
          currentCharacterButton->setText(buttonText);
 
-         // Keep the currentCharacterButton highlighted to show it's selected
-         currentCharacterButton->highlight(RGB(250, 250, 250));
+         // Keep the currentCharacterButton selected to show it's active
+         globalInputHandler.setSelectedButton(currentCharacterButton);
 
          // Update color display with new character
          updateCurrentColorsButtonText();
@@ -214,9 +213,7 @@ void AppState::update()
          editingFrameDuration = false;
          frameDurationInput   = "";
 
-         // Unhighlight the button
-         frameLengthButton->unhighlight();
-         currentSelectedButton = nullptr;
+         // Button highlighting is now handled automatically by InputHandler
       }
       else if (userInput == 27) // Escape key
       {
@@ -224,9 +221,7 @@ void AppState::update()
          editingFrameDuration = false;
          frameDurationInput   = "";
 
-         // Unhighlight the button and restore original text
-         frameLengthButton->unhighlight();
-         currentSelectedButton = nullptr;
+         // Button highlighting is now handled automatically by InputHandler
          updateFrameDurationButtonText();
       }
       else if ((userInput >= '0' && userInput <= '9') || userInput == '.')
@@ -258,9 +253,7 @@ void AppState::update()
       {
          Position mousePos(mouseEvent->x, mouseEvent->y);
 
-         // Update button highlighting based on mouse position and state
-         bool isMousePressed = (mouseEvent->bstate & BUTTON1_PRESSED) != 0;
-         updateButtonHighlighting(mousePos, isMousePressed);
+         // Button highlighting is now handled automatically by the InputHandler
 
          if (mouseEvent->bstate & BUTTON2_PRESSED)
          {
@@ -374,22 +367,7 @@ void AppState::update()
          if (mouseEvent->bstate & BUTTON1_RELEASED)
          {
             mouseHandler.stopDrawing();
-
-            // Handle button release highlighting
-            if (currentClickedButton)
-            {
-               // Only unhighlight if it's not a selected button
-               if (currentClickedButton != currentSelectedButton)
-               {
-                  currentClickedButton->unhighlight();
-                  // Re-highlight if mouse is still over the button
-                  if (currentHoveredButton == currentClickedButton)
-                  {
-                     currentHoveredButton->highlight(RGB(750, 750, 750));
-                  }
-               }
-               currentClickedButton = nullptr;
-            }
+            // Button highlighting is now handled automatically by the InputHandler
          }
 
          if (mouseEvent->bstate & (BUTTON1_RELEASED | BUTTON1_CLICKED))
@@ -403,8 +381,7 @@ void AppState::update()
 
          if (mouseEvent->bstate & REPORT_MOUSE_POSITION)
          {
-            // Update button highlighting for mouse movement
-            updateButtonHighlighting(mousePos, false);
+            // Button highlighting is now handled automatically by the InputHandler
 
             if (mouseHandler.isCameraDragging())
             {
@@ -516,6 +493,11 @@ void AppState::update()
          }
       }
    }
+
+   // Update the current colors button to show the selected colors every frame
+   // This ensures the custom colors are maintained even after button highlighting
+   setCurrentColorsButtonColors(currentColorsButton, currentTextColor, currentBackgroundColor,
+                                drawingTool.getDrawingCharacter());
 }
 
 // public ----------------------------------------------------------------------------------------------------
@@ -525,22 +507,7 @@ void AppState::onExit()
    ncursesWindows.at(0)->clearPrintables();
    globalInputHandler.clear();
 
-   // Clean up button highlighting state
-   if (currentHoveredButton)
-   {
-      currentHoveredButton->unhighlight();
-      currentHoveredButton = nullptr;
-   }
-   if (currentClickedButton)
-   {
-      currentClickedButton->unhighlight();
-      currentClickedButton = nullptr;
-   }
-   if (currentSelectedButton)
-   {
-      currentSelectedButton->unhighlight();
-      currentSelectedButton = nullptr;
-   }
+   // Button highlighting cleanup is now handled automatically by the InputHandler
 
    // Clean up frame duration editing state
    if (editingFrameDuration)
@@ -585,15 +552,11 @@ GameState* AppState::getNextState()
 // public ----------------------------------------------------------------------------------------------------
 void AppState::currentCharacterButtonFunc()
 {
-   // Unhighlight previously selected button
-   if (currentSelectedButton)
-   {
-      currentSelectedButton->unhighlight();
-   }
+   // Set current button as selected using automatic highlighting
+   globalInputHandler.setSelectedButton(currentCharacterButton);
 
-   // Set current button as selected and highlight it
-   currentSelectedButton = currentCharacterButton;
-   currentCharacterButton->highlight(RGB(250, 250, 250));
+   // Stop any ongoing drawing operation when entering character selection mode
+   mouseHandler.stopDrawing();
 
    selectNewCharacter = true;
 }
@@ -601,15 +564,8 @@ void AppState::currentCharacterButtonFunc()
 // public ----------------------------------------------------------------------------------------------------
 void AppState::eraserSelectButtonFunc()
 {
-   // Unhighlight previously selected button
-   if (currentSelectedButton)
-   {
-      currentSelectedButton->unhighlight();
-   }
-
-   // Set eraser button as selected and highlight it
-   currentSelectedButton = eraserSelectButton;
-   eraserSelectButton->highlight(RGB(250, 250, 250));
+   // Set eraser button as selected using automatic highlighting
+   globalInputHandler.setSelectedButton(eraserSelectButton);
 
    drawingTool.setDrawingCharacter(' ');
    updateButtonStates();
@@ -617,12 +573,6 @@ void AppState::eraserSelectButtonFunc()
    // Force display refresh to ensure proper erasing behavior
    displayNeedsCleared = true;
 }
-
-// public ----------------------------------------------------------------------------------------------------
-void AppState::frameLengthButtonFunc() {}
-
-// public ----------------------------------------------------------------------------------------------------
-void AppState::brushSizeButtonFunc() {}
 
 // public ----------------------------------------------------------------------------------------------------
 void AppState::nextFrameButtonFunc()
@@ -732,6 +682,9 @@ void AppState::playAnimationButtonFunc()
       {
          frameManager.clearGreyedBackground();
       }
+
+      // Force display refresh to ensure greyed background appears when stopping animation
+      displayNeedsCleared = true;
 
       // Update button states - re-enable editing controls
       updateButtonStates();
@@ -882,68 +835,7 @@ void AppState::updateButtonStates()
 }
 
 // public ----------------------------------------------------------------------------------------------------
-// public ----------------------------------------------------------------------------------------------------
-void AppState::updateButtonHighlighting(const Position& mousePos, bool isMousePressed)
-{
-   std::shared_ptr<Button> buttonAtPosition = getButtonAtPosition(mousePos);
-
-   // Handle hover highlighting
-   if (buttonAtPosition != currentHoveredButton)
-   {
-      // Unhighlight previously hovered button (if not clicked and not selected)
-      if (currentHoveredButton && currentHoveredButton != currentClickedButton &&
-          currentHoveredButton != currentSelectedButton)
-      {
-         currentHoveredButton->unhighlight();
-      }
-
-      // Highlight new button (if not selected)
-      currentHoveredButton = buttonAtPosition;
-      if (currentHoveredButton && currentHoveredButton != currentClickedButton &&
-          currentHoveredButton != currentSelectedButton)
-      {
-         currentHoveredButton->highlight(RGB(750, 750, 750));
-      }
-   }
-
-   // Handle click highlighting
-   if (isMousePressed && buttonAtPosition)
-   {
-      // Unhighlight previously clicked button (if not selected)
-      if (currentClickedButton && currentClickedButton != buttonAtPosition &&
-          currentClickedButton != currentSelectedButton)
-      {
-         currentClickedButton->unhighlight();
-      }
-
-      // Highlight clicked button (if not selected)
-      currentClickedButton = buttonAtPosition;
-      if (currentClickedButton != currentSelectedButton)
-      {
-         currentClickedButton->highlight(RGB(500, 500, 500));
-      }
-   }
-}
-
-// public ----------------------------------------------------------------------------------------------------
-std::shared_ptr<Button> AppState::getButtonAtPosition(const Position& position)
-{
-   std::vector<std::shared_ptr<Button>> allButtons = {currentColorsButton, currentCharacterButton,
-                                                      eraserSelectButton,  brushSizeButton,
-                                                      frameLengthButton,   nextFrameButton,
-                                                      playAnimationButton, previousFrameButton,
-                                                      quitButton};
-
-   for (auto& button : allButtons)
-   {
-      if (button && button->isVisable() && button->mouseInBounds(position))
-      {
-         return button;
-      }
-   }
-
-   return nullptr;
-}
+// Manual button highlighting methods removed - now handled automatically by InputHandler
 
 // public ----------------------------------------------------------------------------------------------------
 void AppState::updateFrameDurationFromSlider()
@@ -995,6 +887,7 @@ void AppState::updateFrameDurationButtonText()
 
    std::string buttonText = "Duration: " + durationText + "s";
    frameLengthButton->setText(buttonText);
+   frameLengthButton->setBorder(false); // Maintain borderless state
    UIElement::updateAllLockedPositions();
 }
 
@@ -1037,6 +930,7 @@ void AppState::updateBrushSizeButtonText()
 {
    std::string buttonText = "Brush size: " + std::to_string(drawingTool.getBrushSize()) + " characters";
    brushSizeButton->setText(buttonText);
+   brushSizeButton->setBorder(false); // Maintain borderless state
    UIElement::updateAllLockedPositions();
 }
 
@@ -1057,36 +951,6 @@ void AppState::colorExitButtonFunc()
 }
 
 // public ----------------------------------------------------------------------------------------------------
-void AppState::backgroundColorDisplayButtonFunc()
-{
-   // Empty function - button is just for display
-}
-
-// public ----------------------------------------------------------------------------------------------------
-void AppState::textColorDisplayButtonFunc()
-{
-   // Empty function - button is just for display
-}
-
-// public ----------------------------------------------------------------------------------------------------
-void AppState::exampleTextButtonFunc()
-{
-   // Empty function - button is just for display
-}
-
-// public ----------------------------------------------------------------------------------------------------
-void AppState::backgroundRGBButtonFunc()
-{
-   // Empty function - button is just for display
-}
-
-// public ----------------------------------------------------------------------------------------------------
-void AppState::textRGBButtonFunc()
-{
-   // Empty function - button is just for display
-}
-
-// public ----------------------------------------------------------------------------------------------------
 void AppState::createColorEditWindow()
 {
    if (colorEditWindowOpen)
@@ -1094,8 +958,8 @@ void AppState::createColorEditWindow()
       return;
    }
 
-   // Create the color edit window
-   colorEditWindow = std::make_shared<NcursesWindow>(80, 30, 2, false, 5, 5);
+   // Create the color edit window (smaller size)
+   colorEditWindow = std::make_shared<NcursesWindow>(50, 20, 2, false, 10, 5);
    colorEditWindow->setBorderEnabled(true);
    colorEditWindowOpen = true;
 
@@ -1112,36 +976,38 @@ void AppState::createColorEditWindow()
    textGreenSlider = std::make_shared<Slider>(21, true);
    textBlueSlider  = std::make_shared<Slider>(21, true);
 
-   // Create buttons
-   backgroundColorDisplayButton =
-         PrintableFactory::newButton("Background Color:\n       ",
-                                     &AppState::backgroundColorDisplayButtonFunc, this, colorEditWindow);
-   textColorDisplayButton =
-         PrintableFactory::newButton("Text Color:\n       ", &AppState::textColorDisplayButtonFunc, this,
-                                     colorEditWindow);
-   exampleTextButton   = PrintableFactory::newButton("Example text:\nThis is an example.",
-                                                     &AppState::exampleTextButtonFunc, this, colorEditWindow);
-   backgroundRGBButton = PrintableFactory::newButton("R=0, G=0, B=0", &AppState::backgroundRGBButtonFunc,
-                                                     this, colorEditWindow);
-   textRGBButton = PrintableFactory::newButton("R=100, G=100, B=100", &AppState::textRGBButtonFunc, this,
-                                               colorEditWindow);
+   // Create simple labels for sliders
+   backgroundRedLabel = PrintableFactory::newButton("Background Red", colorEditWindow);
+   backgroundRedLabel->setBorder(false);
+   backgroundGreenLabel = PrintableFactory::newButton("Background Green", colorEditWindow);
+   backgroundGreenLabel->setBorder(false);
+   backgroundBlueLabel = PrintableFactory::newButton("Background Blue", colorEditWindow);
+   backgroundBlueLabel->setBorder(false);
+   textRedLabel = PrintableFactory::newButton("Text Red", colorEditWindow);
+   textRedLabel->setBorder(false);
+   textGreenLabel = PrintableFactory::newButton("Text Green", colorEditWindow);
+   textGreenLabel->setBorder(false);
+   textBlueLabel = PrintableFactory::newButton("Text Blue", colorEditWindow);
+   textBlueLabel->setBorder(false);
    colorExitButton = PrintableFactory::newButton("Exit", &AppState::colorExitButtonFunc, this, colorEditWindow);
 
-   // Set positions
-   backgroundRedSlider->setDynamicPosition(ScreenLockPosition::BOTTOM_LEFT_CORNER, StackDirection::VERTICAL);
-   backgroundGreenSlider->setDynamicPosition(ScreenLockPosition::BOTTOM_LEFT_CORNER, StackDirection::VERTICAL);
-   backgroundBlueSlider->setDynamicPosition(ScreenLockPosition::BOTTOM_LEFT_CORNER, StackDirection::VERTICAL);
+   // Label buttons automatically have highlighting disabled and borders hidden since they have no function
 
-   textRedSlider->setDynamicPosition(ScreenLockPosition::BOTTOM_RIGHT_CORNER, StackDirection::VERTICAL);
-   textGreenSlider->setDynamicPosition(ScreenLockPosition::BOTTOM_RIGHT_CORNER, StackDirection::VERTICAL);
-   textBlueSlider->setDynamicPosition(ScreenLockPosition::BOTTOM_RIGHT_CORNER, StackDirection::VERTICAL);
+   // Set positions - organized in two columns
+   backgroundRedLabel->setDynamicPosition(ScreenLockPosition::LEFT_MIDDLE, StackDirection::VERTICAL);
+   backgroundRedSlider->setDynamicPosition(ScreenLockPosition::LEFT_MIDDLE, StackDirection::VERTICAL);
+   backgroundGreenLabel->setDynamicPosition(ScreenLockPosition::LEFT_MIDDLE, StackDirection::VERTICAL);
+   backgroundGreenSlider->setDynamicPosition(ScreenLockPosition::LEFT_MIDDLE, StackDirection::VERTICAL);
+   backgroundBlueLabel->setDynamicPosition(ScreenLockPosition::LEFT_MIDDLE, StackDirection::VERTICAL);
+   backgroundBlueSlider->setDynamicPosition(ScreenLockPosition::LEFT_MIDDLE, StackDirection::VERTICAL);
 
-   backgroundColorDisplayButton->setDynamicPosition(ScreenLockPosition::CENTER, StackDirection::VERTICAL);
-   textColorDisplayButton->setDynamicPosition(ScreenLockPosition::CENTER, StackDirection::VERTICAL);
-   exampleTextButton->setDynamicPosition(ScreenLockPosition::CENTER, StackDirection::VERTICAL);
+   textRedLabel->setDynamicPosition(ScreenLockPosition::RIGHT_MIDDLE, StackDirection::VERTICAL);
+   textRedSlider->setDynamicPosition(ScreenLockPosition::RIGHT_MIDDLE, StackDirection::VERTICAL);
+   textGreenLabel->setDynamicPosition(ScreenLockPosition::RIGHT_MIDDLE, StackDirection::VERTICAL);
+   textGreenSlider->setDynamicPosition(ScreenLockPosition::RIGHT_MIDDLE, StackDirection::VERTICAL);
+   textBlueLabel->setDynamicPosition(ScreenLockPosition::RIGHT_MIDDLE, StackDirection::VERTICAL);
+   textBlueSlider->setDynamicPosition(ScreenLockPosition::RIGHT_MIDDLE, StackDirection::VERTICAL);
 
-   backgroundRGBButton->setDynamicPosition(ScreenLockPosition::BOTTOM_LEFT_CORNER, StackDirection::VERTICAL);
-   textRGBButton->setDynamicPosition(ScreenLockPosition::BOTTOM_RIGHT_CORNER, StackDirection::VERTICAL);
    colorExitButton->setDynamicPosition(ScreenLockPosition::TOP_LEFT_CORNER);
 
    // Set visibility
@@ -1151,11 +1017,12 @@ void AppState::createColorEditWindow()
    textRedSlider->setVisability(true);
    textGreenSlider->setVisability(true);
    textBlueSlider->setVisability(true);
-   backgroundColorDisplayButton->setVisability(true);
-   textColorDisplayButton->setVisability(true);
-   exampleTextButton->setVisability(true);
-   backgroundRGBButton->setVisability(true);
-   textRGBButton->setVisability(true);
+   backgroundRedLabel->setVisability(true);
+   backgroundGreenLabel->setVisability(true);
+   backgroundBlueLabel->setVisability(true);
+   textRedLabel->setVisability(true);
+   textGreenLabel->setVisability(true);
+   textBlueLabel->setVisability(true);
    colorExitButton->setVisability(true);
 
    // Set camera movement
@@ -1165,11 +1032,12 @@ void AppState::createColorEditWindow()
    textRedSlider->setMoveableByCamera(false);
    textGreenSlider->setMoveableByCamera(false);
    textBlueSlider->setMoveableByCamera(false);
-   backgroundColorDisplayButton->setMoveableByCamera(false);
-   textColorDisplayButton->setMoveableByCamera(false);
-   exampleTextButton->setMoveableByCamera(false);
-   backgroundRGBButton->setMoveableByCamera(false);
-   textRGBButton->setMoveableByCamera(false);
+   backgroundRedLabel->setMoveableByCamera(false);
+   backgroundGreenLabel->setMoveableByCamera(false);
+   backgroundBlueLabel->setMoveableByCamera(false);
+   textRedLabel->setMoveableByCamera(false);
+   textGreenLabel->setMoveableByCamera(false);
+   textBlueLabel->setMoveableByCamera(false);
    colorExitButton->setMoveableByCamera(false);
 
    // Set layers
@@ -1179,11 +1047,12 @@ void AppState::createColorEditWindow()
    textRedSlider->setAllAnimationSpriteLayers(2);
    textGreenSlider->setAllAnimationSpriteLayers(2);
    textBlueSlider->setAllAnimationSpriteLayers(2);
-   backgroundColorDisplayButton->setAllAnimationSpriteLayers(2);
-   textColorDisplayButton->setAllAnimationSpriteLayers(2);
-   exampleTextButton->setAllAnimationSpriteLayers(2);
-   backgroundRGBButton->setAllAnimationSpriteLayers(2);
-   textRGBButton->setAllAnimationSpriteLayers(2);
+   backgroundRedLabel->setAllAnimationSpriteLayers(2);
+   backgroundGreenLabel->setAllAnimationSpriteLayers(2);
+   backgroundBlueLabel->setAllAnimationSpriteLayers(2);
+   textRedLabel->setAllAnimationSpriteLayers(2);
+   textGreenLabel->setAllAnimationSpriteLayers(2);
+   textBlueLabel->setAllAnimationSpriteLayers(2);
    colorExitButton->setAllAnimationSpriteLayers(2);
 
    // Set window for sliders and add to window (buttons are automatically added by PrintableFactory::newButton)
@@ -1211,7 +1080,6 @@ void AppState::createColorEditWindow()
 
    // Initialize sliders with current colors
    updateSlidersFromColors();
-   updateColorDisplayButtons();
 
    // Update positions
    UIElement::updateAllLockedPositions();
@@ -1257,32 +1125,35 @@ void AppState::closeColorEditWindow()
       globalInputHandler.removeSlider(textGreenSlider);
    if (textBlueSlider)
       globalInputHandler.removeSlider(textBlueSlider);
-   if (backgroundColorDisplayButton)
-      globalInputHandler.removeButton(backgroundColorDisplayButton);
-   if (textColorDisplayButton)
-      globalInputHandler.removeButton(textColorDisplayButton);
-   if (exampleTextButton)
-      globalInputHandler.removeButton(exampleTextButton);
-   if (backgroundRGBButton)
-      globalInputHandler.removeButton(backgroundRGBButton);
-   if (textRGBButton)
-      globalInputHandler.removeButton(textRGBButton);
+   if (backgroundRedLabel)
+      globalInputHandler.removeButton(backgroundRedLabel);
+   if (backgroundGreenLabel)
+      globalInputHandler.removeButton(backgroundGreenLabel);
+   if (backgroundBlueLabel)
+      globalInputHandler.removeButton(backgroundBlueLabel);
+   if (textRedLabel)
+      globalInputHandler.removeButton(textRedLabel);
+   if (textGreenLabel)
+      globalInputHandler.removeButton(textGreenLabel);
+   if (textBlueLabel)
+      globalInputHandler.removeButton(textBlueLabel);
    if (colorExitButton)
       globalInputHandler.removeButton(colorExitButton);
 
    // Clear pointers
-   backgroundRedSlider          = nullptr;
-   backgroundGreenSlider        = nullptr;
-   backgroundBlueSlider         = nullptr;
-   textRedSlider                = nullptr;
-   textGreenSlider              = nullptr;
-   textBlueSlider               = nullptr;
-   backgroundColorDisplayButton = nullptr;
-   textColorDisplayButton       = nullptr;
-   exampleTextButton            = nullptr;
-   backgroundRGBButton          = nullptr;
-   textRGBButton                = nullptr;
-   colorExitButton              = nullptr;
+   backgroundRedSlider   = nullptr;
+   backgroundGreenSlider = nullptr;
+   backgroundBlueSlider  = nullptr;
+   textRedSlider         = nullptr;
+   textGreenSlider       = nullptr;
+   textBlueSlider        = nullptr;
+   backgroundRedLabel    = nullptr;
+   backgroundGreenLabel  = nullptr;
+   backgroundBlueLabel   = nullptr;
+   textRedLabel          = nullptr;
+   textGreenLabel        = nullptr;
+   textBlueLabel         = nullptr;
+   colorExitButton       = nullptr;
 }
 
 // public ----------------------------------------------------------------------------------------------------
@@ -1309,8 +1180,7 @@ void AppState::updateColorsFromSliders()
    drawingTool.setTextColor(currentTextColor);
    drawingTool.setBackgroundColor(currentBackgroundColor);
 
-   // Update display buttons
-   updateColorDisplayButtons();
+   // Update the current colors button
    updateCurrentColorsButtonText();
 }
 
@@ -1351,51 +1221,6 @@ void AppState::updateSlidersFromColors()
 }
 
 // public ----------------------------------------------------------------------------------------------------
-void AppState::updateColorDisplayButtons()
-{
-   if (!colorEditWindowOpen)
-   {
-      return;
-   }
-
-   // Update background color display button
-   std::string backgroundText = "Background Color:\n       ";
-   backgroundColorDisplayButton->setText(backgroundText);
-   // Only the space characters on the second line get the background color
-   setButtonBackgroundColorDisplay(backgroundColorDisplayButton, currentBackgroundColor);
-
-   // Update text color display button
-   std::string textText = "Text Color:\n       ";
-   textColorDisplayButton->setText(textText);
-   // Only the space characters on the second line get the text color
-   setButtonTextColorDisplay(textColorDisplayButton, currentTextColor);
-
-   // Update example text button
-   std::string exampleText = "Example text:\nThis is an example.";
-   exampleTextButton->setText(exampleText);
-   // Only the "This is an example." text gets both text and background colors
-   setButtonExampleTextColors(exampleTextButton, currentTextColor, currentBackgroundColor);
-
-   // Update RGB value buttons
-   int         backgroundRed     = currentBackgroundColor.getR() / 10; // Convert from 0-1000 to 0-100
-   int         backgroundGreen   = currentBackgroundColor.getG() / 10;
-   int         backgroundBlue    = currentBackgroundColor.getB() / 10;
-   std::string backgroundRGBText = "R=" + std::to_string(backgroundRed) +
-                                   ", G=" + std::to_string(backgroundGreen) +
-                                   ", B=" + std::to_string(backgroundBlue);
-   backgroundRGBButton->setText(backgroundRGBText);
-
-   int         textRed     = currentTextColor.getR() / 10;
-   int         textGreen   = currentTextColor.getG() / 10;
-   int         textBlue    = currentTextColor.getB() / 10;
-   std::string textRGBText = "R=" + std::to_string(textRed) + ", G=" + std::to_string(textGreen) +
-                             ", B=" + std::to_string(textBlue);
-   textRGBButton->setText(textRGBText);
-
-   UIElement::updateAllLockedPositions();
-}
-
-// public ----------------------------------------------------------------------------------------------------
 void AppState::updateCurrentColorsButtonText()
 {
    std::string buttonText =
@@ -1424,129 +1249,8 @@ int AppState::sliderValueToRgb(float sliderValue) const
 }
 
 // public ----------------------------------------------------------------------------------------------------
-void AppState::setButtonBackgroundColorDisplay(std::shared_ptr<Button> button, const RGB& backgroundColor)
-{
-   if (!button)
-   {
-      return;
-   }
-
-   // Get the button's current sprite
-   Sprite&             sprite = button->getCurrentAnimationMutable().getCurrentFrameSpriteMutable();
-   std::vector<Pixel>& pixels = sprite.getPixelsMutable();
-
-   // For "Background Color:\n       " we want to color the spaces after the newline
-   // Find the position of any colon character to determine where the first line ends
-   int colonY = -1;
-   for (const Pixel& pixel : pixels)
-   {
-      if (pixel.getCharacter() == ':')
-      {
-         colonY = pixel.getPosition().getY();
-         break;
-      }
-   }
-
-   // Color space characters that are on the line after the colon
-   for (Pixel& pixel : pixels)
-   {
-      if (pixel.getCharacter() == ' ')
-      {
-         // Check if this space is on the second line (Y position greater than colon's Y)
-         if (colonY >= 0 && pixel.getPosition().getY() > colonY)
-         {
-            // Create a new pixel with the same properties but with the new background color
-            Pixel newPixel(pixel.getPosition(), pixel.getCharacter(), pixel.getTextColor(), backgroundColor,
-                           pixel.getAttributes());
-            pixel = newPixel;
-         }
-      }
-   }
-}
-
-// public ----------------------------------------------------------------------------------------------------
-void AppState::setButtonTextColorDisplay(std::shared_ptr<Button> button, const RGB& textColor)
-{
-   if (!button)
-   {
-      return;
-   }
-
-   // Get the button's current sprite
-   Sprite&             sprite = button->getCurrentAnimationMutable().getCurrentFrameSpriteMutable();
-   std::vector<Pixel>& pixels = sprite.getPixelsMutable();
-
-   // For "Text Color:\n       " we want to color the spaces after the newline
-   // Find the position of any colon character to determine where the first line ends
-   int colonY = -1;
-   for (const Pixel& pixel : pixels)
-   {
-      if (pixel.getCharacter() == ':')
-      {
-         colonY = pixel.getPosition().getY();
-         break;
-      }
-   }
-
-   // Color space characters that are on the line after the colon
-   for (Pixel& pixel : pixels)
-   {
-      if (pixel.getCharacter() == ' ')
-      {
-         // Check if this space is on the second line (Y position greater than colon's Y)
-         if (colonY >= 0 && pixel.getPosition().getY() > colonY)
-         {
-            // Create a new pixel with the same text color but with textColor as background
-            Pixel newPixel(pixel.getPosition(), pixel.getCharacter(), pixel.getTextColor(), textColor,
-                           pixel.getAttributes());
-            pixel = newPixel;
-         }
-      }
-   }
-}
-
-// public ----------------------------------------------------------------------------------------------------
-void AppState::setButtonExampleTextColors(std::shared_ptr<Button> button, const RGB& textColor,
-                                          const RGB& backgroundColor)
-{
-   if (!button)
-   {
-      return;
-   }
-
-   // Get the button's current sprite
-   Sprite&             sprite = button->getCurrentAnimationMutable().getCurrentFrameSpriteMutable();
-   std::vector<Pixel>& pixels = sprite.getPixelsMutable();
-
-   // For "Example text:\nThis is an example." we want to color "This is an example." after the newline
-   // Find the position of any colon character to determine where the first line ends
-   int colonY = -1;
-   for (const Pixel& pixel : pixels)
-   {
-      if (pixel.getCharacter() == ':')
-      {
-         colonY = pixel.getPosition().getY();
-         break;
-      }
-   }
-
-   // Color all characters that are on the line after the colon (second line)
-   for (Pixel& pixel : pixels)
-   {
-      // Check if this character is on the second line (Y position greater than colon's Y)
-      if (colonY >= 0 && pixel.getPosition().getY() > colonY)
-      {
-         // Apply colors to all characters on the second line
-         Pixel newPixel(pixel.getPosition(), pixel.getCharacter(), textColor, backgroundColor,
-                        pixel.getAttributes());
-         pixel = newPixel;
-      }
-   }
-}
-
-// public ----------------------------------------------------------------------------------------------------
 void AppState::setCurrentColorsButtonColors(std::shared_ptr<Button> button, const RGB& textColor,
-                                            const RGB& backgroundColor, char drawingChar)
+                                            const RGB& backgroundColor, char /* drawingChar */)
 {
    if (!button)
    {
@@ -1557,16 +1261,33 @@ void AppState::setCurrentColorsButtonColors(std::shared_ptr<Button> button, cons
    Sprite&             sprite = button->getCurrentAnimationMutable().getCurrentFrameSpriteMutable();
    std::vector<Pixel>& pixels = sprite.getPixelsMutable();
 
-   // Find only the drawing character and set its colors
-   for (Pixel& pixel : pixels)
+   // Find the colon character in "Current Colors: x", then find the character 2 positions to the right
+   // This should be the example character after ": "
+   Position colonPos(-1, -1);
+
+   // First pass: find the colon character
+   for (const Pixel& pixel : pixels)
    {
-      // Check if this pixel is the drawing character
-      if (pixel.getCharacter() == drawingChar)
+      if (pixel.getCharacter() == ':')
       {
-         // Create a new pixel with the updated colors
-         Pixel newPixel(pixel.getPosition(), pixel.getCharacter(), textColor, backgroundColor,
-                        pixel.getAttributes());
-         pixel = newPixel;
+         colonPos = pixel.getPosition();
+         break;
+      }
+   }
+
+   // Second pass: find the character 2 positions to the right of the colon (after ": ")
+   if (colonPos.getX() >= 0)
+   {
+      for (Pixel& pixel : pixels)
+      {
+         if (pixel.getPosition().getX() == colonPos.getX() + 2 && pixel.getPosition().getY() == colonPos.getY())
+         {
+            // Create a new pixel with the updated colors
+            Pixel newPixel(pixel.getPosition(), pixel.getCharacter(), textColor, backgroundColor,
+                           pixel.getAttributes());
+            pixel = newPixel;
+            break; // Only update the one example character
+         }
       }
    }
 }

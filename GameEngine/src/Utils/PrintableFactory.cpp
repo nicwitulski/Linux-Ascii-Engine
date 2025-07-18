@@ -415,6 +415,76 @@ std::shared_ptr<Button> PrintableFactory::newButton(std::string text, std::funct
 }
 
 // public static ---------------------------------------------------------------------------------------------
+std::shared_ptr<Button> PrintableFactory::newButton(std::string                    text,
+                                                    std::shared_ptr<NcursesWindow> ncursesWindow)
+{
+   // Load the default button sprite
+   std::vector<Animation> animations;
+   std::string            basePath = "src/Animations/defaultBorder";
+
+   try
+   {
+      for (const auto& entry : fs::directory_iterator(basePath))
+      {
+         if (entry.is_directory())
+         {
+            std::string animationName = entry.path().filename().string();
+            Animation   anim          = loadAnimation("defaultBorder", animationName, true);
+            animations.push_back(anim);
+         }
+      }
+   }
+   catch (const fs::filesystem_error& e)
+   {
+      std::cerr << "Error loading default button animations: " << e.what() << std::endl;
+      // Create a fallback button if loading fails
+      std::vector<Pixel> fallbackPixels = {Pixel(Position(0, 0), L'+'), Pixel(Position(1, 0), L'-'),
+                                           Pixel(Position(2, 0), L'-'), Pixel(Position(3, 0), L'-'),
+                                           Pixel(Position(4, 0), L'-'), Pixel(Position(5, 0), L'+'),
+                                           Pixel(Position(0, 1), L'|'), Pixel(Position(1, 1), L' '),
+                                           Pixel(Position(2, 1), L' '), Pixel(Position(3, 1), L' '),
+                                           Pixel(Position(4, 1), L' '), Pixel(Position(5, 1), L'|'),
+                                           Pixel(Position(0, 2), L'+'), Pixel(Position(1, 2), L'-'),
+                                           Pixel(Position(2, 2), L'-'), Pixel(Position(3, 2), L'-'),
+                                           Pixel(Position(4, 2), L'-'), Pixel(Position(5, 2), L'+')};
+      Sprite             fallbackSprite(fallbackPixels, 1);
+      Frame              fallbackFrame(fallbackSprite, 10);
+      std::vector<Frame> fallbackFrames = {fallbackFrame};
+      Animation          fallbackAnim("default", fallbackFrames, true);
+      animations.push_back(fallbackAnim);
+   }
+
+   // Create the button without a function
+   auto button = std::make_shared<Button>("defaultBorder", animations, true, false);
+
+   // Set the text (this will wrap the outline around the text)
+   button->setText(text);
+
+   // Add to printables list
+   if (ncursesWindow != nullptr)
+   {
+      button->setNcurseWindow(ncursesWindow->getWindow());
+      ncursesWindow->addPrintable(button);
+      ncursesWindow->setPrintablesNeedSorted(true);
+   }
+   else if (!ncursesWindows.empty())
+   {
+      button->setNcurseWindow(ncursesWindows.at(0)->getWindow());
+      ncursesWindows.at(0)->addPrintable(button);
+      ncursesWindows.at(0)->setPrintablesNeedSorted(true);
+   }
+   else
+   {
+      std::cerr << "Warning: No ncurses windows available for Button with text '" << text << "'" << std::endl;
+   }
+
+   // Automatically register with global InputHandler
+   globalInputHandler.addButton(button);
+
+   return button;
+}
+
+// public static ---------------------------------------------------------------------------------------------
 void PrintableFactory::writePrintableToTextFiles(const std::shared_ptr<Printable>& printable)
 {
    namespace fs = std::filesystem;

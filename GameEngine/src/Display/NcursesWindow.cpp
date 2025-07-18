@@ -510,13 +510,28 @@ void NcursesWindow::refreshPrintables(const float deltaTime)
 
    for (auto& printable : m_containedPrintables)
    {
+      // Skip invisible printables
+      if (!printable->isVisable())
+      {
+         continue;
+      }
+
       for (Animation& animation : printable->getAnimationsMutable())
       {
          if (animation.getAnimationName() == printable->getCurrentAnimationName())
          {
             if (animation.isPlaying())
             {
+               size_t previousFrameIndex = animation.getCurrentFrameIndex();
                animation.update(deltaTime);
+
+               // Check if frame actually advanced
+               if (animation.getCurrentFrameIndex() != previousFrameIndex)
+               {
+                  // Force display clear when animation frames advance to prevent after images
+                  m_displayNeedsCleared = true;
+               }
+
                printable->addDirtySprite(animation.getPreviousFrameSprite());
             }
 
